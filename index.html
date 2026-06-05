@@ -3,7 +3,7 @@
 <html lang="es" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>DoctorSV NutriPlan - José Manuel</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -18,12 +18,12 @@
     }
   </style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col pb-32">
+<body class="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))]">
 
   <!-- NOTIFICACIÓN TIPO TOAST PERSONALIZADA -->
   <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none max-w-sm w-full px-4"></div>
 
-  <!-- HEADER DE LA APP (Ajustado para deslizarse de forma natural con el scroll) -->
+  <!-- HEADER DE LA APP (Se desliza de forma natural con el scroll) -->
   <header class="bg-gradient-to-r from-teal-600 to-cyan-700 text-white shadow-md">
     <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
       <div class="flex items-center gap-3">
@@ -400,8 +400,9 @@
 
   </main>
 
-  <!-- NAVEGACIÓN INFERIOR (FIJA / INMOVIBLE) -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 shadow-[0_-4px_25px_rgba(0,0,0,0.1)] py-1.5 sm:py-2">
+  <!-- NAVEGACIÓN INFERIOR (FIJA, CON ACCELERACIÓN POR HARDWARE Y SEGURIDAD PARA SAFARI iOS) -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 shadow-[0_-4px_25px_rgba(0,0,0,0.1)] pt-1.5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:py-2" 
+       style="transform: translate3d(0, 0, 0); -webkit-transform: translate3d(0, 0, 0); will-change: transform;">
     <div class="max-w-6xl mx-auto px-1 sm:px-4 flex justify-between sm:justify-center sm:gap-2 md:gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory">
       
       <!-- HOY -->
@@ -555,10 +556,10 @@
       ]},
       { categoria: 'Abarrotes y Granos (7 Días)', items: [
         { nombre: 'Tortillas de maíz', cantidad: '1 paquete fresco', notes: 'Tu carbohidrato de cabecera (1 por comida según plan).' },
-        { nombre: 'Pan de molde integral', cantidad: '1 bolsa mediana', notes: 'Para desayunos y sandwiches.' },
-        { nombre: 'Arroz blanco o integral', cantidad: '1 bolsa pequeña', notes: 'Controlar porciones a 3 cdas por almuerzo.' },
-        { nombre: 'Frijoles cocidos enteros (de seda)', cantidad: '1 bolsa mediana', notes: 'Controlar porciones a 4 cdas.' },
-        { nombre: 'Almendras naturales o semillas mixtas', cantidad: '1 bolsa de 150g', notes: 'Porciones de 10-12 unidades para tus snacks.' }
+        { font: 'bold', nombre: 'Pan de molde integral', cantidad: '1 bolsa mediana', notes: 'Para desayunos y sandwiches.' },
+        { nombre: 'Arroz blanco o integral', cantidad: '1 bolsa pequeña', notes: 'Arroz medido estrictamente a 3 cucharadas por plato.' },
+        { nombre: 'Frijoles cocidos enteros (de seda)', cantidad: '1 bolsa mediana', notes: 'Sabor casero bajo en sodio, 4 cucharadas de porción.' },
+        { nombre: 'Almendras naturales o semillas mixtas', cantidad: '1 bolsa de 150g', notes: 'Porciones de 10-12 unidades para controlar la ansiedad.' }
       ]}
     ];
 
@@ -1572,6 +1573,7 @@
       renderAll();
     }
 
+    // Vaciar carrito
     function clearShoppingCart() {
       state.shoppingCart = {};
       saveToLocalStorage();
@@ -1677,7 +1679,7 @@
       showToast(`¡Peso de ${val} lb registrado localmente! ⚖️`, 'success');
     }
 
-    // Guardar cambios en LocalStorage
+    // Eliminar peso
     function deleteWeightLog(id) {
       state.weightLogs = state.weightLogs.filter(l => l.id !== id);
       saveToLocalStorage();
@@ -1881,4 +1883,3 @@
   </script>
 </body>
 </html>
-
