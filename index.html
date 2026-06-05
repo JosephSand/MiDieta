@@ -1,0 +1,1884 @@
+
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DoctorSV NutriPlan - José Manuel</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Ocultar barra de scroll para estéticas premium en el menú inferior en móviles */
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col pb-32">
+
+  <!-- NOTIFICACIÓN TIPO TOAST PERSONALIZADA -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none max-w-sm w-full px-4"></div>
+
+  <!-- HEADER DE LA APP (Ajustado para deslizarse de forma natural con el scroll) -->
+  <header class="bg-gradient-to-r from-teal-600 to-cyan-700 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <div class="bg-white/10 p-2 rounded-full">
+          <svg class="w-8 h-8 text-cyan-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">DoctorSV NutriPlan</h1>
+          <div class="flex items-center gap-2 mt-0.5">
+            <p class="text-xs text-teal-100">Plan de 60 Días • José Manuel Sandoval M.</p>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/30 text-emerald-200 border border-emerald-400/20" title="Tus datos están protegidos en tu memoria local">
+              <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full mr-1 animate-pulse"></span> Almacenamiento Local
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 bg-teal-800/40 px-3 py-1.5 rounded-lg text-sm border border-teal-500/30">
+        <div class="text-right">
+          <span class="text-teal-200 block text-[10px] uppercase font-bold">Rango Actual</span>
+          <span id="header-user-level" class="font-semibold text-white text-xs">Iniciante 🌱</span>
+        </div>
+        <div class="border-l border-teal-500/40 h-8"></div>
+        <div>
+          <span class="text-teal-200 block text-[10px] uppercase font-bold">Puntos Totales</span>
+          <span id="header-user-points" class="font-bold text-white">0 PTS</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:py-6">
+
+    <!-- VISTA 1: HOY -->
+    <div id="view-hoy" class="space-y-6">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <span class="text-teal-600 font-semibold text-sm">Organizador de Comidas</span>
+          <h2 class="text-2xl font-bold flex items-center gap-2 mt-1">
+            Día seleccionado: 
+            <select id="select-dia" onchange="changeDay(this.value)" class="bg-teal-50 border border-teal-300 text-teal-800 rounded-lg py-1 px-3 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <option value="Lunes">Lunes</option>
+              <option value="Martes">Martes</option>
+              <option value="Miércoles">Miércoles</option>
+              <option value="Jueves">Jueves</option>
+              <option value="Viernes">Viernes</option>
+              <option value="Sábado">Sábado</option>
+              <option value="Domingo">Domingo</option>
+            </select>
+          </h2>
+          <p class="text-sm text-slate-500 mt-1">Completa y registra las porciones del menú correspondientes a hoy.</p>
+        </div>
+        <div class="w-full md:w-auto bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col items-center justify-center min-w-[150px]">
+          <div class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Tu Progreso Diario</div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5 mb-2">
+            <div id="daily-progress-bar" class="bg-teal-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <span id="daily-progress-text" class="text-lg font-extrabold text-teal-700">0% completado</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Columna de Comidas -->
+        <div class="lg:col-span-2 space-y-4">
+          <h3 class="text-lg font-bold text-slate-700 flex items-center gap-2">
+            <span>🍽️</span> Cronograma Nutricional del Día
+          </h3>
+          <div id="meals-list" class="space-y-4">
+            <!-- Cargado dinámicamente -->
+          </div>
+
+          <!-- SECCIÓN DE ANÁLISIS DE CALORÍAS Y AGREGADOS (SOLO EN VISTA HOY) -->
+          <div id="calorie-analysis-container" class="mt-6">
+            <!-- Cargado dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Columna de Hidratación y Consejos -->
+        <div class="space-y-6">
+          <div class="bg-gradient-to-br from-blue-50 to-indigo-100 p-5 rounded-2xl border border-blue-200 shadow-sm text-center">
+            <div class="text-2xl mb-1">💧</div>
+            <h3 class="font-bold text-blue-900 text-lg">Control de Hidratación</h3>
+            <p class="text-xs text-blue-700 mb-4 font-medium">Recomendado: 8 a 12 vasos diarios (2 a 3 Litros)</p>
+            
+            <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-4 justify-center" id="water-glasses-grid">
+              <!-- Cargado dinámicamente -->
+            </div>
+            
+            <div class="flex justify-between items-center bg-white/70 px-4 py-2 rounded-xl border border-blue-200/50">
+              <span class="font-semibold text-blue-900 text-sm">Total consumido:</span>
+              <span id="water-total-text" class="font-bold text-blue-600 text-lg">0 / 12 vasos</span>
+            </div>
+            
+            <div class="flex gap-2 mt-3">
+              <button onclick="addWater(-1)" class="flex-1 bg-white hover:bg-slate-50 border border-blue-300 text-blue-700 py-1.5 rounded-lg text-sm font-semibold transition">-1 Vaso</button>
+              <button onclick="addWater(1)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded-lg text-sm font-semibold shadow transition">+1 Vaso</button>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+            <h4 class="font-bold text-slate-800 border-b pb-2 text-xs uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <span>💡</span> Recomendación de hoy
+            </h4>
+            <div class="space-y-3 text-xs text-slate-600">
+              <p class="flex gap-2">
+                <span class="text-teal-600 font-bold">✓</span> 
+                <span>No omitas porciones. Respeta la estructura dada para cada día.</span>
+              </p>
+              <p class="flex gap-2">
+                <span class="text-teal-600 font-bold">✓</span> 
+                <span>Evita el uso de consomé, cubitos, sopas instantáneas o alimentos procesados con exceso de sodio.</span>
+              </p>
+              <p class="flex gap-2">
+                <span class="text-teal-600 font-bold">✓</span> 
+                <span>Acompaña tus comidas únicamente con refresco de Jamaica o limonada con 1% de azúcar por vaso.</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-5 rounded-2xl text-white shadow-sm space-y-2">
+            <div class="text-2xl">🏃‍♂️ Swimmer</div>
+            <h4 class="font-bold text-lg">Actividad Física Sugerida</h4>
+            <p class="text-sm pt-2 leading-relaxed">
+              Se recomienda realizar caminata constante o natación. Haz al menos 30 minutos, 3 veces por semana, e incrementa la intensidad paulatinamente.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA 2: MENÚ COMPLETO -->
+    <div id="view-menu" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <span>🥗</span> Plan Nutricional Completo de 7 Días
+        </h2>
+        <p class="text-sm text-slate-500 mt-1">Navega y revisa el menú diseñado para tu control de alimentación de 60 días.</p>
+      </div>
+      <div id="full-weekly-menu-container" class="space-y-6">
+        <!-- Cargado dinámicamente -->
+      </div>
+    </div>
+
+    <!-- VISTA 3: SÚPER SEMANAL -->
+    <div id="view-compras" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <span class="text-teal-600 font-bold text-xs uppercase tracking-wider">Duración exacta: 7 Días</span>
+          <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2 mt-0.5">
+            <span>🛒</span> Lista de Súper Semanal
+          </h2>
+          <p class="text-sm text-slate-500 mt-1">Cantidades calculadas para cubrir exactamente una semana de tu plan nutricional de 60 días.</p>
+        </div>
+        <button onclick="clearShoppingCart()" class="bg-slate-100 text-slate-700 hover:bg-slate-200 px-4 py-2 rounded-xl text-sm font-semibold transition">
+          Limpiar Carrito
+        </button>
+      </div>
+      <div id="shopping-categories-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Cargado dinámicamente -->
+      </div>
+      <div class="bg-teal-50 border border-teal-200 p-5 rounded-2xl text-teal-900 text-sm flex gap-3">
+        <span class="text-2xl">📋</span>
+        <div>
+          <h4 class="font-bold mb-1">Nota de Optimización de Compra:</h4>
+          <p class="leading-relaxed">
+            Esta lista semanal te asegura comprar con precisión lo que necesitas para tu ciclo de 7 días. Se recomienda comprar frutas y verduras dos veces por semana para conservar sus propiedades y frescura.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA 4: CONTROL DE PESO DETALLADO -->
+    <div id="view-progreso" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <span>📈</span> Control y Seguimiento de Peso
+          </h2>
+          <p class="text-sm text-slate-500 mt-1">Registra tu peso periódicamente para medir el impacto de tu plan nutricional de 60 días.</p>
+        </div>
+        
+        <!-- BOTONES DE COPIAS DE SEGURIDAD LOCALES -->
+        <div class="flex gap-2 w-full md:w-auto">
+          <button onclick="exportBackupData()" class="flex-1 md:flex-none bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
+            <span>📥</span><span>Exportar Respaldo</span>
+          </button>
+          <label class="flex-1 md:flex-none bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition">
+            <span>📤</span><span>Importar Respaldo</span>
+            <input type="file" id="import-backup-file" onchange="importBackupData(event)" class="hidden" accept=".json">
+          </label>
+        </div>
+      </div>
+
+      <!-- Estadísticas Rápidas -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Peso de Partida</span>
+          <span class="text-3xl font-extrabold text-slate-700 mt-1">174.0 lb</span>
+          <span class="text-xs text-slate-400 mt-2">Peso inicial registrado</span>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Peso Actual</span>
+          <span id="stat-current-weight" class="text-3xl font-extrabold text-teal-600 mt-1">174.0 lb</span>
+          <span class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+            <span class="inline-block w-2.5 h-2.5 bg-emerald-500 rounded-full"></span> Último registro
+          </span>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Peso Objetivo</span>
+          <div class="flex items-center gap-2 mt-1">
+            <input type="number" id="input-target-weight" onchange="updateTargetWeight(this.value)" class="text-2xl font-extrabold text-cyan-600 bg-cyan-50 border border-cyan-100 rounded px-2 w-24 text-center focus:ring-2 focus:ring-cyan-400 focus:outline-none" value="160">
+            <span class="font-bold text-slate-500 text-sm">lb</span>
+          </div>
+          <span class="text-xs text-slate-400 mt-2">Puedes editar tu meta</span>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Libras Perdidas</span>
+          <span id="stat-lost-weight" class="text-3xl font-extrabold text-indigo-600 mt-1">0 lb</span>
+          <div class="w-full bg-slate-100 rounded-full h-2 mt-2">
+            <div id="stat-progress-bar" class="bg-indigo-600 h-2 rounded-full" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Formulario -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+          <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <span>⚖️</span> Agregar Peso
+          </h3>
+          <form id="weight-form" onsubmit="addWeightLog(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Peso Actual (libras)</label>
+              <div class="relative">
+                <input type="number" step="0.1" id="weight-input" placeholder="Ej. 171.2" required class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-4 pr-12 text-slate-800 font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                <span class="absolute right-4 top-3 text-slate-400 text-sm font-bold">lbs</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">¿Cómo te sientes físicamente?</label>
+              <textarea id="weight-notes-input" placeholder="Ej. Siento más energía en el entrenamiento..." class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm text-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none h-20"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+              Registrar Peso ➔
+            </button>
+          </form>
+        </div>
+
+        <!-- Historial Gráfico -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <span>📉</span> Historial Gráfico de Avance
+            </h3>
+            <div id="weight-graph-container" class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-3">
+            <h4 class="font-bold text-sm text-slate-600 uppercase tracking-wider">Registros Previos</h4>
+            <div id="weight-logs-history" class="max-h-[150px] overflow-y-auto space-y-2 pr-1">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA 5: LOGROS Y GAMIFICACIÓN -->
+    <div id="view-logros" class="hidden space-y-6">
+      <div class="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-3xl p-6 md:p-8 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="space-y-3 text-center md:text-left">
+          <span class="bg-white/20 text-white font-bold text-xs uppercase tracking-widest py-1 px-3.5 rounded-full">Panel de Desafíos Nutricionales</span>
+          <h2 class="text-3xl font-extrabold tracking-tight">¡Tus Logros y Motivación!</h2>
+          <p class="text-teal-100 max-w-xl text-sm font-medium">
+            Completa los 30 desafíos propuestos para ganar experiencia, subir de nivel y obtener fabulosos premios virtuales para diversificar tu dieta de 60 días.
+          </p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 text-center min-w-[200px]">
+          <span class="text-xs text-teal-200 uppercase font-bold tracking-wider">Tu Rango Actual</span>
+          <div id="badge-level-text" class="mt-2 py-1.5 px-3 rounded-xl font-bold text-sm bg-slate-50 border border-slate-200 text-slate-700">Iniciante</div>
+          <div class="mt-3 text-2xl font-black"><span id="total-points-display">0</span> <span class="text-xs text-teal-200">PTS</span></div>
+          <div id="total-unlocked-count" class="text-xs text-teal-200 mt-1 font-semibold">0 de 30 logros</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-3">
+          <span>🎁</span> Premios y Recompensas Virtuales por Desbloquear
+        </h3>
+        <div id="virtual-prizes-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Cargado dinámicamente -->
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold text-slate-700 flex items-center gap-2">
+            <span>🏆</span> Listado Completo de Desafíos (30)
+          </h3>
+          <span class="text-xs text-slate-500 font-bold">Toca para reclamar logros manuales</span>
+        </div>
+        <div id="achievements-list-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Cargado dinámicamente -->
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA 6: MEDICIÓN MANUAL -->
+    <div id="view-porciones" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <span>✋</span> Guía Visual de Porciones: "¡Tus manos saben cuánto!"
+        </h2>
+        <p class="text-sm text-slate-500 mt-1">
+          La forma aprobada por la OMS (Organización Mundial de la Salud) para medir porciones usando tu propia mano como referencia.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- SVG Mano Interactiva -->
+        <div class="lg:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center">
+          <div class="text-center mb-4">
+            <span class="text-xs bg-teal-50 text-teal-800 border border-teal-200 py-1 px-3 rounded-full font-bold uppercase tracking-wider">
+              Interactiva: Haz clic en las zonas numeradas
+            </span>
+          </div>
+          
+          <div class="relative w-full max-w-[280px] h-[340px]">
+            <svg viewBox="0 0 200 240" class="w-full h-full text-slate-300" fill="currentColor">
+              <path d="M50 180 C40 160 30 110 35 105 C38 100 48 115 50 120 C45 80 43 50 48 45 C53 40 58 50 58 80 C58 50 58 30 65 25 C72 20 75 35 75 75 C75 50 78 35 84 30 C90 25 94 40 94 80 C95 55 98 45 104 40 C110 35 113 50 111 90 C110 100 114 120 118 120 C125 120 140 150 120 200 C110 215 90 230 70 230 C55 230 55 200 50 180 Z" class="text-slate-200 fill-current hover:text-slate-300 transition-colors"></path>
+              
+              <!-- Dedos (Lácteos) -->
+              <ellipse cx="53" cy="50" rx="9" ry="15" onclick="selectPortion('dedos')" class="cursor-pointer hover:fill-emerald-500 fill-emerald-400/80 transition-all"></ellipse>
+              <ellipse cx="70" cy="40" rx="9" ry="15" onclick="selectPortion('dedos')" class="cursor-pointer hover:fill-emerald-500 fill-emerald-400/80 transition-all"></ellipse>
+
+              <!-- Puño cerrado (Carbohidratos) -->
+              <circle cx="80" cy="115" r="22" onclick="selectPortion('puno')" class="cursor-pointer hover:fill-blue-500 fill-blue-400/80 transition-all"></circle>
+
+              <!-- Punta del pulgar (Grasas) -->
+              <circle cx="38" cy="110" r="8" onclick="selectPortion('pulgar')" class="cursor-pointer hover:fill-amber-500 fill-amber-400/80 transition-all"></circle>
+
+              <!-- Palma (Proteínas) -->
+              <path d="M60 140 C60 130 95 130 95 140 C95 170 60 170 60 140 Z" onclick="selectPortion('palma')" class="cursor-pointer hover:fill-rose-500 fill-rose-400/80 transition-all"></path>
+
+              <!-- Un puñado (Semillas) -->
+              <ellipse cx="108" cy="130" rx="10" ry="18" onclick="selectPortion('punado')" class="cursor-pointer hover:fill-purple-500 fill-purple-400/80 transition-all"></ellipse>
+
+              <!-- Dos manos ahuecadas (Vegetales) -->
+              <path d="M40 200 C30 190 100 170 110 190 C120 210 50 230 40 200 Z" onclick="selectPortion('dosmanos')" class="cursor-pointer hover:fill-teal-500 fill-teal-400/80 transition-all"></path>
+            </svg>
+            
+            <div class="absolute top-[35px] left-[55px] bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold pointer-events-none">1</div>
+            <div class="absolute top-[100px] left-[150px] bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold pointer-events-none">2</div>
+            <div class="absolute top-[100px] left-[25px] bg-amber-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold pointer-events-none">3</div>
+            <div class="absolute top-[140px] left-[90px] bg-rose-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold pointer-events-none">4</div>
+            <div class="absolute top-[110px] left-[195px] bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold pointer-events-none">5</div>
+            <div class="absolute top-[195px] left-[110px] bg-teal-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold pointer-events-none">6</div>
+          </div>
+          <p class="text-xs text-slate-400 text-center mt-3 font-medium leading-relaxed">
+            Presiona los pines de colores para ver los detalles de porción y su aplicación recomendada.
+          </p>
+        </div>
+
+        <!-- Tarjetas de Info -->
+        <div id="portions-info-cards" class="lg:col-span-7 space-y-3">
+          <!-- Cargado dinámicamente -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- NAVEGACIÓN INFERIOR (FIJA / INMOVIBLE) -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 shadow-[0_-4px_25px_rgba(0,0,0,0.1)] py-1.5 sm:py-2">
+    <div class="max-w-6xl mx-auto px-1 sm:px-4 flex justify-between sm:justify-center sm:gap-2 md:gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory">
+      
+      <!-- HOY -->
+      <button onclick="switchTab('hoy')" id="tab-btn-hoy" class="flex flex-col items-center gap-1 py-1 px-3 text-[10px] sm:text-xs font-bold transition-all shrink-0 snap-center text-teal-600">
+        <div id="tab-icon-container-hoy" class="p-2 rounded-2xl transition-all bg-teal-50 scale-110 shadow-sm border border-teal-500">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <span class="mt-0.5">Hoy</span>
+      </button>
+
+      <!-- MENÚ COMPLETO -->
+      <button onclick="switchTab('menu')" id="tab-btn-menu" class="flex flex-col items-center gap-1 py-1 px-3 text-[10px] sm:text-xs font-semibold text-slate-400 hover:text-slate-600 transition-all shrink-0 snap-center">
+        <div id="tab-icon-container-menu" class="p-2 rounded-2xl transition-all bg-transparent border border-transparent">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path>
+          </svg>
+        </div>
+        <span class="mt-0.5">Menú</span>
+      </button>
+
+      <!-- SÚPER SEMANAL -->
+      <button onclick="switchTab('compras')" id="tab-btn-compras" class="flex flex-col items-center gap-1 py-1 px-3 text-[10px] sm:text-xs font-semibold text-slate-400 hover:text-slate-600 transition-all shrink-0 snap-center">
+        <div id="tab-icon-container-compras" class="p-2 rounded-2xl transition-all bg-transparent border border-transparent">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+          </svg>
+        </div>
+        <span class="mt-0.5">Súper</span>
+      </button>
+
+      <!-- CONTROL PESO -->
+      <button onclick="switchTab('progreso')" id="tab-btn-progreso" class="flex flex-col items-center gap-1 py-1 px-3 text-[10px] sm:text-xs font-semibold text-slate-400 hover:text-slate-600 transition-all shrink-0 snap-center">
+        <div id="tab-icon-container-progreso" class="p-2 rounded-2xl transition-all bg-transparent border border-transparent">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+          </svg>
+        </div>
+        <span class="mt-0.5">Progreso</span>
+      </button>
+
+      <!-- LOGROS -->
+      <button onclick="switchTab('logros')" id="tab-btn-logros" class="flex flex-col items-center gap-1 py-1 px-3 text-[10px] sm:text-xs font-semibold text-slate-400 hover:text-slate-600 transition-all shrink-0 snap-center">
+        <div id="tab-icon-container-logros" class="p-2 rounded-2xl transition-all bg-transparent border border-transparent">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+        <span class="mt-0.5">Logros</span>
+      </button>
+
+      <!-- MEDICIÓN MANUAL -->
+      <button onclick="switchTab('porciones')" id="tab-btn-porciones" class="flex flex-col items-center gap-1 py-1 px-3 text-[10px] sm:text-xs font-semibold text-slate-400 hover:text-slate-600 transition-all shrink-0 snap-center">
+        <div id="tab-icon-container-porciones" class="p-2 rounded-2xl transition-all bg-transparent border border-transparent">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 009 11M3 7l1.5 1.5M21 7l-1.5 1.5M10.5 4.5l1.5 1.5M13.5 4.5L12 6M12 11c0-3.517 1.009-6.799 2.753-9.571m3.44 2.04l-.054.09A13.916 13.916 0 0015 11"></path>
+          </svg>
+        </div>
+        <span class="mt-0.5">Porciones</span>
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- SCRIPT DE LÓGICA DE LA APLICACIÓN -->
+  <script>
+    // === BASE DE DATOS DEL MENÚ COMPLETO (PDF) ===
+    const menuSemanal = {
+      Lunes: {
+        desayuno: { items: ['2 huevos duros', '1 tortilla de maíz', '1/4 de aguacate', '3 cdas de requesón'], notes: 'Desayuno balanceado rico en grasas saludables.' },
+        refrigerio1: { items: ['Yogurt sin azúcar', '1 guineo'], notes: 'Energía de rápida absorción.' },
+        almuerzo: { items: ['Pechuga de pollo a la plancha (90-100g)', '1 taza de ensalada o vegetales hervidos', '1 tortilla de maíz'], notes: 'Corte magro y cocción limpia sin grasas.' },
+        refrigerio2: { items: ['1 manzana verde', '12 almendras'], notes: 'Grasas saludables y fibra saciante.' },
+        cena: { items: ['1 Sandwich de jamón de pavo (tomate, pepino, queso mozzarella + aderezo al gusto)'], notes: 'Cena ligera pero completa.' }
+      },
+      Martes: {
+        desayuno: { items: ['Omelette de vegetales', '3 cdas de frijoles enteros', '1/4 de queso fresco', '1 tortilla de maíz'], notes: 'Excelente combinación de proteína y carbohidratos.' },
+        refrigerio1: { items: ['Coctel de fruta (vaso de 8 a 12 onzas)'], notes: 'Fruta fresca de temporada.' },
+        almuerzo: { items: ['Carne con vegetales (2 oz de carne + 1.5 tazas de vegetales)', '1 taza de ensalada fresca', '1 tortilla de maíz'], notes: 'Porción de carne de res medida con la palma.' },
+        refrigerio2: { items: ['Medio pepino rallado con tomate, limón y sal'], notes: 'Snack súper hidratante y libre de sodio.' },
+        cena: { items: ['3 cdas de requesón', 'Medio plátano asado (no muy maduro)', '1 tortilla de maíz'], notes: 'Plátano asado como carbohidrato complejo de excelente asimilación.' }
+      },
+      Miércoles: {
+        desayuno: { items: ['2 claras de huevo cocidas', '2 tostadas de pan integral con requesón'], notes: 'Excelente opción baja en grasas y alta en fibra.' },
+        refrigerio1: { items: ['1 Yogurt sin azúcar o proteico', '10 almendras'], notes: 'Proteína portátil para media mañana.' },
+        almuerzo: { items: ['1 porción de carne encebollada (90g)', '1 taza de ensalada fresca', '3 cdas de arroz blanco o integral', '1 tortilla de maíz'], notes: 'Porción de arroz medida con 3 cucharadas soperas.' },
+        refrigerio2: { items: ['1 porción de semillas (12 a 15 unidades)', '1 manzana verde'], notes: 'Ideal para la ansiedad de la tarde.' },
+        cena: { items: ['3 cdas de requesón', '1 tomate en rodajas', '1 tortilla de maíz'], notes: 'Cena muy baja en carbohidratos simples.' }
+      },
+      Jueves: {
+        desayuno: { items: ['1 Sandwich de jamón de pavo (tomate, pepino, queso mozzarella + aderezo al gusto)'], notes: 'Fácil de preparar si tienes prisa.' },
+        refrigerio1: { items: ['1 porción de sandía en cubos'], notes: 'Altamente hidratante.' },
+        almuerzo: { items: ['4 tortitas de carne molida magra', '3 cdas de arroz blanco', '1 taza de vegetales cocidos (brócoli, ejotes, güisquil, zanahoria)'], notes: 'Vegetales variados y coloridos.' },
+        refrigerio2: { items: ['Coctel de fruta (vaso de 8 a 12 onzas)'], notes: 'Disfruta la variedad de colores.' },
+        cena: { items: ['3 cdas de requesón', 'Medio plátano cocido (no muy maduro)', '1 tortilla de maíz'], notes: 'El plátano cocido es suave y fácil de digerir de noche.' }
+      },
+      Viernes: {
+        desayuno: { items: ['1 huevo picado', '1/2 taza de tomatada natural', '3 cdas de requesón', '1 tortilla de maíz'], notes: 'Tomatada casera sin sazonadores artificiales.' },
+        refrigerio1: { items: ['Medio pepino rallado con tomate, limón y sal'], notes: 'Snack fresco y libre de sodio.' },
+        almuerzo: { items: ['Fajitas de pollo con vegetales', '1 taza de ensalada o vegetales hervidos', '1 tortilla de maíz'], notes: 'Sabor rico y sazonado con especias naturales.' },
+        refrigerio2: { items: ['Media zanahoria rallada con limón'], notes: 'Rica en betacarotenos.' },
+        cena: { items: ['2 lascas de pan integral con requesón', '2 huevos duros', '1 tomate en rodajas'], notes: 'Alta proteína para cerrar la semana laboral.' }
+      },
+      Sábado: {
+        desayuno: { items: ['Omelette de vegetales', '3 cdas de frijoles enteros', '1/4 de queso fresco', '1 tortilla de maíz'], notes: 'Desayuno tradicional saludable.' },
+        refrigerio1: { items: ['1 porción de melón en cubos'], notes: 'Muy refrescante.' },
+        almuerzo: { items: ['BOWL de ensalada césar de pollo a la plancha (lechuga, tomate, elote, cebolla, zanahoria, pepino, cubitos de pan tostado + 2 cdas aderezo)'], notes: 'Usa aderezo ligero preferiblemente.' },
+        refrigerio2: { items: ['Medio pepino rallado con tomate, limón y sal'], notes: 'Mantente libre de snacks ultraprocesados.' },
+        cena: { items: ['3 tacos de pollo o carne con chimol y aguacate'], notes: 'Cena deliciosa con tortillas de maíz normales.' }
+      },
+      Domingo: {
+        desayuno: { items: ['1 torta de huevo con vegetales (1 entero + 2 claras + 1 taza de vegetales mixtos)'], notes: 'Aumenta el volumen de tu comida con vegetales.' },
+        refrigerio1: { items: ['1 Yogurt sin azúcar o proteico', '10 almendras'], notes: 'Snack del domingo por la mañana.' },
+        almuerzo: { items: ['1 porción de carne a la plancha', '1/2 taza de puré de papas casero', '1 taza de vegetales cocidos'], notes: 'Puré preparado con un toque mínimo de leche descremada o agua.' },
+        refrigerio2: { items: ['Coctel de fruta (vaso de 8 a 12 onzas)'], notes: 'Fruta fresca dominical.' },
+        cena: { items: ['2 pupusas de queso o de ayote (¡Disfruta responsablemente!)'], notes: 'Tu premio semanal aprobado en el plan de alimentación.' }
+      }
+    };
+
+    // --- CÁLCULO INTELIGENTE DE LISTA DE COMPRAS (7 DÍAS EXACTOS) ---
+    const sugerenciaCompras = [
+      { categoria: 'Proteínas y Carnes (7 Días)', items: [
+        { nombre: 'Pechuga de pollo deshuesada', cantidad: '1.2 kg (aprox. 5-6 porciones de almuerzo/cena)', notes: 'Para fajitas, plancha y ensalada césar.' },
+        { nombre: 'Carne de res magra (bisteck / pulpa)', cantidad: '600 g (aprox. 3-4 porciones)', notes: 'Para carne encebollada y tacos del sábado.' },
+        { nombre: 'Carne molida súper magra', cantidad: '300 g', notes: 'Para las 4 tortitas de carne del jueves.' },
+        { nombre: 'Jamón de pechuga de pavo', cantidad: '1 paquete (bajo en sodio)', notes: 'Para sandwiches del lunes y jueves.' }
+      ]},
+      { categoria: 'Lácteos y Huevos (7 Días)', items: [
+        { font: 'bold', nombre: 'Huevos frescos', cantidad: '1 cartón de 30 unidades', notes: 'Base de tus desayunos y cenas.' },
+        { nombre: 'Requesón fresco', cantidad: '2 botes medianos (aprox. 400g total)', notes: 'Sustituto ideal de cremas, consumido casi a diario.' },
+        { nombre: 'Queso fresco', cantidad: '1 bloque de 250g', notes: 'Para desayunos de martes y sábado.' },
+        { nombre: 'Queso mozzarella rallado o lascas', cantidad: '1 paquete', notes: 'Para los sandwiches del menú.' },
+        { nombre: 'Yogurt natural sin azúcar o griego', cantidad: '4-5 vasitos individuales', notes: 'Para los refrigerios matutinos.' }
+      ]},
+      { categoria: 'Frutas y Verduras Frescas (7 Días)', items: [
+        { font: 'bold', nombre: 'Manzanas verdes', cantidad: '4 unidades', notes: 'Refrigerios del lunes y miércoles.' },
+        { nombre: 'Guineos (bananas)', cantidad: '1 mano pequeña (3-4 unidades)', notes: 'Refrigerio del lunes y excelente opción de carbohidrato post-entreno.' },
+        { nombre: 'Sandía fresca picada', cantidad: '1 tarrina', notes: 'Para el refrigerio del jueves.' },
+        { nombre: 'Melón entero', cantidad: '1 unidad pequeña', notes: 'Para el refrigerio del sábado.' },
+        { nombre: 'Frutas de temporada (papaya, piña, etc.)', cantidad: 'Suficiente para 3 cócteles de fruta', notes: 'Refrigerios de martes, jueves y domingo.' },
+        { nombre: 'Aguacates medianos', cantidad: '3 unidades', notes: 'Para el lunes y los tacos del sábado.' },
+        { nombre: 'Tomates de cocina', cantidad: '12-15 unidades grandes', notes: 'Uso diario en ensaladas, rodajas, tomatada y chimol.' },
+        { nombre: 'Pepinos grandes', cantidad: '6-8 unidades', notes: 'Para los refrigerios de pepino rallado y ensaladas.' },
+        { nombre: 'Limones jugosos', cantidad: '1 red de 10-12 unidades', notes: 'Sazonador principal para ensaladas y pepino.' },
+        { nombre: 'Zanahorias', cantidad: '4 unidades', notes: 'Para ensaladas ralladas y vegetales cocidos.' },
+        { nombre: 'Vegetales mixtos para cocer', cantidad: 'Brócoli (1 cabeza), Ejotes (1/2 lb), Güisquil (2 medianos)', notes: 'Para almuerzos del jueves y domingo.' },
+        { nombre: 'Lechuga romana', cantidad: '2 unidades', notes: 'Especialmente para la ensalada césar y ensalada fresca diaria.' },
+        { nombre: 'Cebolla morada y blanca', cantidad: '2 de cada una', notes: 'Para carne encebollada y chimol.' },
+        { nombre: 'Papas medianas', cantidad: '2 de repuesto', notes: 'Para el puré del domingo y el combo de recuperación.' }
+      ]},
+      { categoria: 'Abarrotes y Granos (7 Días)', items: [
+        { nombre: 'Tortillas de maíz', cantidad: '1 paquete fresco', notes: 'Tu carbohidrato de cabecera (1 por comida según plan).' },
+        { nombre: 'Pan de molde integral', cantidad: '1 bolsa mediana', notes: 'Para desayunos y sandwiches.' },
+        { nombre: 'Arroz blanco o integral', cantidad: '1 bolsa pequeña', notes: 'Controlar porciones a 3 cdas por almuerzo.' },
+        { nombre: 'Frijoles cocidos enteros (de seda)', cantidad: '1 bolsa mediana', notes: 'Controlar porciones a 4 cdas.' },
+        { nombre: 'Almendras naturales o semillas mixtas', cantidad: '1 bolsa de 150g', notes: 'Porciones de 10-12 unidades para tus snacks.' }
+      ]}
+    ];
+
+    // --- GUÍA DE PORCIONES ---
+    const porcionesMano = [
+      { id: 'dedos', titulo: 'Dedos índice y medio juntos', medida: '1 oz (aprox. 30g)', alimentos: 'Lácteos (quesos frescos, requesón, mozzarella).', recomendacion: '1 o 2 porciones diarias es lo ideal, preferiblemente requesón.', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+      { id: 'puno', titulo: 'Puño cerrado', medida: '1/2 taza (aprox. 120g)', alimentos: 'Carbohidratos (arroz, frijoles enteros, papa, pastas).', recomendacion: 'De 1 a 2 porciones por plato. Preferiblemente granos y cereales ricos en fibra.', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+      { id: 'pulgar', titulo: 'Punta del pulgar', medida: '1 cucharadita (aprox. 5g)', alimentos: 'Grasas, aceite de oliva, aderezos o mantequilla.', recomendacion: 'Limitar a porciones pequeñas. Priorizar aceites limpios o el aguacate.', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+      { id: 'palma', titulo: 'Palma de la mano (sin dedos)', medida: '90-100g (3 oz)', alimentos: 'Proteínas (pechuga de pollo, carne de res magra, pescados).', recomendacion: 'Usa cortes magros cocidos a la plancha o hervidos sin grasas saturadas.', color: 'bg-rose-100 text-rose-800 border-rose-300' },
+      { id: 'punado', titulo: 'Un puñado (palma abierta al ras)', medida: '10-20g', alimentos: 'Semillas secas (almendras, maní natural, semillas mixtas).', recomendacion: 'Consumir como snack o refrigerio para controlar ansiedad.', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+      { id: 'dosmanos', titulo: 'Dos manos ahuecadas', medida: '2 tazas (aprox. 300g)', alimentos: 'Vegetales y ensaladas frescas.', recomendacion: 'Sin límite estricto, ideal para aportar volumen y saciedad.', color: 'bg-teal-100 text-teal-800 border-teal-300' }
+    ];
+
+    // --- 30 LOGROS ---
+    const listadoLogros = [
+      { id: 'h1', title: 'Gota Inicial', desc: 'Registra tu primer vaso de agua en el control diario.', cat: 'Hidratación', pts: 50, condition: 'water_1' },
+      { id: 'h2', title: 'Súper Hidratado', desc: 'Llega a la meta recomendada de 8 vasos de agua en un día.', cat: 'Hidratación', pts: 100, condition: 'water_8' },
+      { id: 'h3', title: 'Nivel Olímpico', desc: 'Alcanza el límite de hidratación de 12 vasos de agua en un día.', cat: 'Hidratación', pts: 150, condition: 'water_12' },
+      { id: 'h4', title: 'H2O Constante', desc: 'Mantén tu hidratación sobre los 8 vasos por 3 días seguidos.', cat: 'Hidratación', pts: 200, manual: true },
+      { id: 'h5', title: 'Adiós Sed', desc: 'Completa una semana entera de hidratación impecable.', cat: 'Hidratación', pts: 300, manual: true },
+      { id: 'h6', title: 'Pureza Absoluta', desc: 'Pasa toda una semana bebiendo únicamente agua y tés con 1% de azúcar.', cat: 'Hidratación', pts: 250, manual: true },
+      
+      { id: 'a1', title: 'Comienzo de Acero', desc: 'Marca tu primera comida completada en la aplicación.', cat: 'Alimentación', pts: 50, condition: 'meal_1' },
+      { id: 'a2', title: 'Lunes Impecable', desc: 'Completa las 5 comidas del Lunes.', cat: 'Alimentación', pts: 120, manual: true },
+      { id: 'a3', title: 'Verde que te Quiero', desc: 'Sustituye carbohidratos simples por ensalada extra o vegetales cocidos.', cat: 'Alimentación', pts: 100, manual: true },
+      { id: 'a4', title: 'Cero Ultraprocesados', desc: 'Evita consumir ultraprocesados durante 5 días seguidos.', cat: 'Alimentación', pts: 150, manual: true },
+      { id: 'a5', title: 'El Arte del Requesón', desc: 'Consume requesón bajo en grasas en tus cenas 3 veces en una semana.', cat: 'Alimentación', pts: 120, manual: true },
+      { id: 'a6', title: 'Fuerza de Voluntad', desc: 'Evita por completo las harinas refinadas durante tus cenas por 4 días.', cat: 'Alimentación', pts: 180, manual: true },
+      { id: 'a7', title: 'Snack Inteligente', desc: 'Sustituye golosinas procesadas por manzanas verdes y almendras en tus refrigerios.', cat: 'Alimentación', pts: 100, manual: true },
+      { id: 'a8', title: 'La Tomatada Fit', desc: 'Prepara el huevo picado con tomatada natural sin aceites saturados el Viernes.', cat: 'Alimentación', pts: 120, manual: true },
+      { id: 'a9', title: 'Premio Justo', desc: 'Disfruta de tus 2 pupusas el Domingo controlando las porciones de la semana.', cat: 'Alimentación', pts: 100, manual: true },
+      { id: 'a10', title: 'Cena de Campeones', desc: 'Completa la lasca de pan integral con huevo duro y rodajas de tomate.', cat: 'Alimentación', pts: 110, manual: true },
+
+      { id: 'p1', title: 'Báscula Lista', desc: 'Realiza tu primer registro de peso en la sección de progreso.', cat: 'Peso', pts: 50, condition: 'weight_log_1' },
+      { id: 'p2', title: 'Primera Libra Fuera', desc: 'Registra una pérdida de al menos 1 libra con respecto a tu peso inicial.', cat: 'Peso', pts: 150, condition: 'weight_loss_1' },
+      { id: 'p3', title: 'Adiós 172', desc: 'Baja exitosamente de la barrera de las 172 libras.', cat: 'Peso', pts: 200, condition: 'weight_under_172' },
+      { id: 'p4', title: 'El club de las 170', desc: 'Alcanza la marca icónica de las 170 libras.', cat: 'Peso', pts: 250, condition: 'weight_under_170' },
+      { id: 'p5', title: 'Ritmo Constante', desc: 'Registra tu peso durante 3 semanas consecutivas.', cat: 'Peso', pts: 200, manual: true },
+      { id: 'p6', title: 'Medio Camino', desc: 'Consigue perder la mitad de las libras que te separan de tu meta.', cat: 'Peso', pts: 300, condition: 'weight_half_way' },
+      { id: 'p7', title: '¡Meta Conquistada!', desc: 'Alcanza o supera tu peso objetivo programado.', cat: 'Peso', pts: 500, condition: 'weight_goal_met' },
+
+      { id: 'c1', title: 'Súper Organizado', desc: 'Marca por primera vez un alimento adquirido en tu lista de súper.', cat: 'Compras', pts: 50, condition: 'cart_1' },
+      { id: 'c2', title: 'Despensa Lista', desc: 'Consigue comprar y marcar el 100% de la proteína semanal.', cat: 'Compras', pts: 120, manual: true },
+      { id: 'c3', title: 'Manos Sabias', desc: 'Usa la guía visual de porciones para medir tu almuerzo con la mano.', cat: 'Compras', pts: 100, manual: true },
+      { id: 'c4', title: 'Caminata Diaria', desc: 'Completa 30 minutos de caminata constante recomendada.', cat: 'Hábitos', pts: 100, manual: true },
+      { id: 'c5', title: 'Delfín de Natación', desc: 'Realiza una sesión de natación para quemar calorías adicionales.', cat: 'Hábitos', pts: 150, manual: true },
+      { id: 'c6', title: 'Volumen Registrado', desc: 'Registra un volumen de entrenamiento de forma manual por primera vez.', cat: 'Hábitos', pts: 50, condition: 'workout_volume_1' },
+      { id: 'c7', title: 'Disciplina de Hierro', desc: 'Pasa 7 días seguidos utilizando la app para registrar tus actividades.', cat: 'Hábitos', pts: 250, manual: true }
+    ];
+
+    // --- RECOMPENSAS VIRTUALES ---
+    const premiosVirtuales = [
+      { req: 5, prize: 'Recetario Fit de Desayunos', desc: '5 recetas rápidas con requesón, claras de huevo y vegetales.' },
+      { req: 15, prize: 'Guía de Aderezos y Especias de El Salvador', desc: 'Sazonadores 100% naturales libres de sodio.' },
+      { req: 25, prize: 'Planificador Avanzado para el Mes 2', desc: 'Variedad de proteínas y carbohidratos complejos aprobados.' }
+    ];
+
+    // === GENERACIÓN DINÁMICA DE ENTRENAMIENTOS POR VOLUMEN MANUAL ===
+    function getDynamicWorkoutDetails(workoutId, volume) {
+      const vol = parseFloat(volume) || 0;
+      
+      const config = {
+        pecho: { name: 'Pecho 🛡️', baseGasto: 180, icon: '🛡️' },
+        espalda: { name: 'Espalda 👐', baseGasto: 170, icon: '👐' },
+        hombro: { name: 'Hombros 🔺', baseGasto: 150, icon: '🔺' },
+        brazos: { name: 'Brazos 💪', baseGasto: 130, icon: '💪' },
+        abdomen: { name: 'Abdomen 🧱', baseGasto: 100, icon: '🧱' },
+        ninguno: { name: 'Descanso 💤', baseGasto: 0, icon: '💤' }
+      };
+
+      if (workoutId === 'ninguno' || !config[workoutId]) {
+        return {
+          nombre: 'Descanso / Sin Entreno 💤',
+          gasto: 0,
+          sugerencia: 'No requiere compensación calórica adicional hoy.',
+          explicacion: 'Mantén las porciones limpias de tu menú diario de DoctorSV tal y como están.',
+          caloriasCombo: 0
+        };
+      }
+
+      const active = config[workoutId];
+      // Gasto estimado dinámico proporcional al volumen: 1 kcal por cada 40 lbs de carga + gasto base. Límite máximo de 480 kcal.
+      const gastoCalculado = Math.min(480, Math.round(active.baseGasto + (vol * 0.025)));
+      
+      let sugerencia = '';
+      let explicacion = '';
+      let caloriasCombo = 0;
+
+      // Determinación de los combos de seguridad basados en volumen real ingresado
+      if (vol < 3000) {
+        caloriasCombo = 100;
+        sugerencia = '1 manzana verde fresca (u otra fruta similar de tu menú) + 6 almendras naturales.';
+        explicacion = `Con un volumen moderado-bajo de ${vol.toLocaleString()} lbs, tu vaciado de glucógeno muscular es leve. Un snack ligero e hidratante de fruta con grasas saludables mantendrá estables tus niveles de azúcar post-entreno.`;
+      } else if (vol <= 6500) {
+        caloriasCombo = 180;
+        sugerencia = '1 tostada de pan integral con 3 cdas soperas de requesón fresco + rodajas de tomate.';
+        explicacion = `Buen trabajo, volumen intermedio de ${vol.toLocaleString()} lbs. Tus músculos demandan aminoácidos para la síntesis de proteínas. El requesón de tu plan de DoctorSV provee caseína de absorción sostenida ideal para tus fibras de ${active.name.split(' ')[0]}.`;
+      } else {
+        caloriasCombo = 260;
+        sugerencia = 'Combo de Máxima Seguridad: 1 papa mediana cocida con un toque de sal + 2 claras de huevo y 2 cdas de requesón.';
+        explicacion = `¡Atención! Has movido un volumen extremo de ${vol.toLocaleString()} lbs en tu sesión de ${active.name.split(' ')[0]}. Tus niveles de glucógeno están muy comprometidos. Para evitar hipoglucemia, fatiga extrema o desmayos, consume este combo completo para reponer la energía celular de inmediato.`;
+      }
+
+      return {
+        nombre: `${active.name} (Vol: ${vol.toLocaleString()} lbs)`,
+        gasto: gastoCalculado,
+        sugerencia: sugerencia,
+        explicacion: explicacion,
+        caloriasCombo: caloriasCombo
+      };
+    }
+
+    // === ESTADO GLOBAL DE LA APP ===
+    let state = {
+      activeTab: 'hoy',
+      selectedDay: 'Lunes',
+      targetWeight: 160,
+      completedMeals: {},
+      waterGlasses: 0,
+      weightLogs: [
+        { id: '1', date: '2026-05-15', weight: 174.0, notes: 'Peso inicial del plan de 60 días' },
+        { id: '2', date: '2026-05-20', weight: 172.5, notes: 'Me siento con más energía y ligereza' }
+      ],
+      shoppingCart: {},
+      unlockedAchievements: {},
+      selectedPortion: null,
+      completedAddons: {}, // Keyed by: "day-addonId"
+      workoutToday: {},    // Keyed by: "day" -> e.g. "Lunes": "pecho"
+      workoutVolume: {},   // Keyed by: "day" -> e.g. "Lunes": 8640
+      completedRecovery: {} // Keyed by: "day" -> e.g. "Lunes": true
+    };
+
+    // Auxiliar para detectar día de la semana actual
+    function getDiaActualNombre() {
+      const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const hoyIndex = new Date().getDay();
+      return dias[hoyIndex];
+    }
+
+    // === TOAST NOTIFICATION SYSTEM (Reemplazo premium de alerts) ===
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-600 border-emerald-500 text-white shadow-lg',
+        info: 'bg-indigo-600 border-indigo-500 text-white shadow-lg',
+        warning: 'bg-amber-600 border-amber-500 text-white shadow-lg',
+        error: 'bg-rose-600 border-rose-500 text-white shadow-lg'
+      };
+
+      toast.className = `flex items-center justify-between p-4 rounded-xl border text-sm font-semibold transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto ${colors[type]}`;
+      toast.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span>${type === 'success' ? '✨' : type === 'info' ? 'ℹ️' : '⚠️'}</span>
+          <span>${message}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-white/80 hover:text-white font-bold ml-4">✕</button>
+      `;
+
+      container.appendChild(toast);
+      
+      // Animación entrada
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 50);
+
+      // Desaparecer después de 4 segundos
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // === INICIALIZACIÓN DE LA APLICACIÓN ===
+    window.onload = function() {
+      // Intentar cargar estado persistido
+      const savedMeals = localStorage.getItem('jose_completed_meals');
+      const savedWater = localStorage.getItem('jose_water_glasses');
+      const savedWeight = localStorage.getItem('jose_weight_logs');
+      const savedCart = localStorage.getItem('jose_shopping_cart');
+      const savedTarget = localStorage.getItem('jose_target_weight');
+      const savedLogros = localStorage.getItem('jose_unlocked_achievements');
+      const savedAddons = localStorage.getItem('jose_completed_addons');
+      const savedWorkout = localStorage.getItem('jose_workout_today');
+      const savedVolume = localStorage.getItem('jose_workout_volume');
+      const savedRecovery = localStorage.getItem('jose_completed_recovery');
+
+      if (savedMeals) state.completedMeals = JSON.parse(savedMeals);
+      if (savedWater) state.waterGlasses = parseInt(savedWater, 10);
+      if (savedWeight) state.weightLogs = JSON.parse(savedWeight);
+      if (savedCart) state.shoppingCart = JSON.parse(savedCart);
+      if (savedTarget) state.targetWeight = parseFloat(savedTarget);
+      if (savedLogros) state.unlockedAchievements = JSON.parse(savedLogros);
+      if (savedAddons) state.completedAddons = JSON.parse(savedAddons);
+      if (savedWorkout) state.workoutToday = JSON.parse(savedWorkout);
+      if (savedVolume) state.workoutVolume = JSON.parse(savedVolume);
+      if (savedRecovery) state.completedRecovery = JSON.parse(savedRecovery);
+
+      // Sincronizar select de día
+      const diaActual = getDiaActualNombre();
+      state.selectedDay = diaActual;
+      document.getElementById('select-dia').value = diaActual;
+      document.getElementById('input-target-weight').value = state.targetWeight;
+
+      // Actualizar logros automáticos y renderizar todo
+      evaluarLogrosAutomaticos();
+      renderAll();
+      switchTab('hoy');
+      showToast('¡Datos locales cargados de forma segura! 🔐', 'success');
+    };
+
+    // Guardar cambios en LocalStorage
+    function saveToLocalStorage() {
+      localStorage.setItem('jose_completed_meals', JSON.stringify(state.completedMeals));
+      localStorage.setItem('jose_water_glasses', state.waterGlasses.toString());
+      localStorage.setItem('jose_weight_logs', JSON.stringify(state.weightLogs));
+      localStorage.setItem('jose_shopping_cart', JSON.stringify(state.shoppingCart));
+      localStorage.setItem('jose_target_weight', state.targetWeight.toString());
+      localStorage.setItem('jose_unlocked_achievements', JSON.stringify(state.unlockedAchievements));
+      localStorage.setItem('jose_completed_addons', JSON.stringify(state.completedAddons));
+      localStorage.setItem('jose_workout_today', JSON.stringify(state.workoutToday));
+      localStorage.setItem('jose_workout_volume', JSON.stringify(state.workoutVolume));
+      localStorage.setItem('jose_completed_recovery', JSON.stringify(state.completedRecovery));
+    }
+
+    // === GESTOR DE COPIAS DE SEGURIDAD LOCALES (JSON) ===
+    function exportBackupData() {
+      try {
+        const backupString = JSON.stringify(state, null, 2);
+        const blob = new Blob([backupString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `DoctorSV_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('¡Copia de seguridad descargada exitosamente! 📥', 'success');
+      } catch (error) {
+        showToast('No se pudo exportar el respaldo local.', 'error');
+      }
+    }
+
+    function importBackupData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedState = JSON.parse(e.target.result);
+          
+          // Validación básica de estructura
+          if (importedState.targetWeight && importedState.weightLogs) {
+            state = { ...state, ...importedState };
+            saveToLocalStorage();
+            renderAll();
+            showToast('¡Respaldo importado y sincronizado localmente! 🔄', 'success');
+          } else {
+            showToast('El archivo de respaldo no tiene el formato correcto.', 'error');
+          }
+        } catch (error) {
+          showToast('Error al procesar el archivo JSON.', 'error');
+        }
+      };
+      reader.readAsText(file);
+      // Limpiar input
+      event.target.value = '';
+    }
+
+    // === SISTEMA DE CAMBIO DE PESTAÑAS (OPTIMIZADO PARA BARRA INFERIOR CON COLORES) ===
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      
+      // Lista de vistas
+      const vistas = ['hoy', 'menu', 'compras', 'progreso', 'logros', 'porciones'];
+      vistas.forEach(v => {
+        const viewEl = document.getElementById(`view-${v}`);
+        if (v === tabId) {
+          viewEl.classList.remove('hidden');
+        } else {
+          viewEl.classList.add('hidden');
+        }
+      });
+
+      // Configuración estética de las pestañas en el menú inferior
+      const tabsConfig = {
+        hoy: { activeColor: 'text-teal-600', activeBg: 'bg-teal-50', border: 'border-teal-400' },
+        menu: { activeColor: 'text-emerald-600', activeBg: 'bg-emerald-50', border: 'border-emerald-400' },
+        compras: { activeColor: 'text-amber-600', activeBg: 'bg-amber-50', border: 'border-amber-400' },
+        progreso: { activeColor: 'text-rose-600', activeBg: 'bg-rose-50', border: 'border-rose-400' },
+        logros: { activeColor: 'text-indigo-600', activeBg: 'bg-indigo-50', border: 'border-indigo-400' },
+        porciones: { activeColor: 'text-cyan-600', activeBg: 'bg-cyan-50', border: 'border-cyan-400' }
+      };
+
+      vistas.forEach(v => {
+        const tabBtn = document.getElementById(`tab-btn-${v}`);
+        const iconContainer = document.getElementById(`tab-icon-container-${v}`);
+        
+        if (v === tabId) {
+          const config = tabsConfig[v];
+          tabBtn.className = `flex flex-col items-center gap-1 py-1 px-3 text-[10px] sm:text-xs font-bold transition-all shrink-0 snap-center ${config.activeColor}`;
+          iconContainer.className = `p-2 rounded-2xl transition-all ${config.activeBg} scale-110 shadow-sm border ${config.border}`;
+        } else {
+          tabBtn.className = "flex flex-col items-center gap-1 py-1 px-3 text-[10px] sm:text-xs font-semibold text-slate-400 hover:text-slate-600 transition-all shrink-0 snap-center";
+          iconContainer.className = "p-2 rounded-2xl transition-all bg-transparent border border-transparent";
+        }
+      });
+
+      // Ajustes de visualización y scroll suave automático
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+
+    // === LÓGICA DE ACTUALIZACIÓN DE INTERFAZ ===
+    function renderAll() {
+      evaluarLogrosAutomaticos();
+      renderHeaderStats();
+      renderHoyTab();
+      renderMenuTab();
+      renderComprasTab();
+      renderProgresoTab();
+      renderLogrosTab();
+      renderPorcionesTab();
+    }
+
+    // Header Stats
+    function renderHeaderStats() {
+      const stats = getAchievementsMetrics();
+      const levelInfo = getUserLevel(stats.points);
+      
+      document.getElementById('header-user-level').innerText = levelInfo.title.split(' ')[0];
+      document.getElementById('header-user-points').innerText = `${stats.points} PTS`;
+      
+      const badgeText = document.getElementById('badge-level-text');
+      if (badgeText) {
+        badgeText.innerText = levelInfo.title;
+        badgeText.className = `mt-2 py-1.5 px-3 rounded-xl font-bold text-sm ${levelInfo.color}`;
+      }
+      const ptsDisplay = document.getElementById('total-points-display');
+      if (ptsDisplay) ptsDisplay.innerText = stats.points;
+      
+      const countDisplay = document.getElementById('total-unlocked-count');
+      if (countDisplay) countDisplay.innerText = `${stats.count} de 30 logros desbloqueados`;
+    }
+
+    // Vista Hoy
+    function renderHoyTab() {
+      const day = state.selectedDay;
+      const meals = menuSemanal[day];
+      const container = document.getElementById('meals-list');
+      container.innerHTML = '';
+
+      if (!meals) return;
+
+      const keys = [
+        { key: 'desayuno', title: 'Desayuno', icon: '🌅', color: 'border-amber-400 bg-amber-50/20' },
+        { key: 'refrigerio1', title: 'Refrigerio de la Mañana', icon: '🍏', color: 'border-emerald-400 bg-emerald-50/20' },
+        { key: 'almuerzo', title: 'Almuerzo', icon: '☀️', color: 'border-cyan-400 bg-cyan-50/20' },
+        { key: 'refrigerio2', title: 'Refrigerio de la Tarde', icon: '🥕', color: 'border-indigo-400 bg-indigo-50/20' },
+        { key: 'cena', title: 'Cena', icon: '🌙', color: 'border-purple-400 bg-purple-50/20' }
+      ];
+
+      let completedCount = 0;
+
+      keys.forEach(meal => {
+        const mealData = meals[meal.key];
+        const isCompleted = !!state.completedMeals[`${day}-${meal.key}`];
+        if (isCompleted) completedCount++;
+
+        const itemsLi = mealData.items.map(it => `
+          <li class="${isCompleted ? 'line-through text-slate-400' : 'font-semibold'}">${it}</li>
+        `).join('');
+
+        const cardHtml = `
+          <div class="border-l-4 rounded-r-xl p-4 transition-all shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white ${meal.color} ${isCompleted ? 'opacity-70 grayscale-[30%]' : ''}">
+            <div class="space-y-1.5 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">${meal.icon}</span>
+                <h4 class="font-bold text-slate-800 text-base">${meal.title}</h4>
+                ${isCompleted ? '<span class="bg-teal-100 text-teal-800 text-xs px-2 py-0.5 rounded-full font-semibold">Consumido</span>' : ''}
+              </div>
+              <ul class="list-disc list-inside space-y-1 text-slate-700 pl-1 text-sm font-medium">
+                ${itemsLi}
+              </ul>
+              <p class="text-xs text-slate-500 italic mt-1 font-medium">${mealData.notes}</p>
+            </div>
+            
+            <button onclick="toggleMealComplete('${day}', '${meal.key}')" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+              isCompleted 
+                ? 'bg-slate-200 text-slate-600 hover:bg-slate-300' 
+                : 'bg-teal-600 text-white hover:bg-teal-700 shadow-md hover:shadow-lg'
+            }">
+              ${isCompleted ? 'Desmarcar' : '¡Consumido!'}
+            </button>
+          </div>
+        `;
+        container.insertAdjacentHTML('beforeend', cardHtml);
+      });
+
+      // Progress bar hoy
+      const percent = Math.round((completedCount / keys.length) * 100);
+      document.getElementById('daily-progress-bar').style.width = `${percent}%`;
+      document.getElementById('daily-progress-text').innerText = `${percent}% completado`;
+
+      // Render Vasos de agua
+      const waterGrid = document.getElementById('water-glasses-grid');
+      waterGrid.innerHTML = '';
+      for (let i = 0; i < 12; i++) {
+        const active = i < state.waterGlasses;
+        const btn = document.createElement('button');
+        btn.onclick = () => setWaterDirectly(i + 1);
+        btn.className = `text-2xl p-2 rounded-xl transition-transform active:scale-95 ${
+          active ? 'bg-blue-500 shadow-inner scale-105 filter drop-shadow' : 'bg-slate-200/60 text-slate-400 hover:bg-slate-200'
+        }`;
+        btn.innerText = '🥤';
+        btn.title = `${i + 1} vasos`;
+        waterGrid.appendChild(btn);
+      }
+      document.getElementById('water-total-text').innerText = `${state.waterGlasses} / 12 vasos`;
+
+      // Renderizar análisis de calorías sugerido (solo se hace en hoy)
+      renderCalorieAnalysis();
+    }
+
+    // === NUEVA FUNCIÓN: ANÁLISIS DE CALORÍAS Y AGREGADOS CON CONTROL DE ENTRENAMIENTO ===
+    function renderCalorieAnalysis() {
+      const container = document.getElementById('calorie-analysis-container');
+      const day = state.selectedDay;
+      if (!container) return;
+
+      // Base calórica del menú: ~1350 kcal
+      const baseCalories = 1350;
+
+      // Cálculo de agregados seleccionados hoy
+      const extraFruitActive = !!state.completedAddons[`${day}-extra_fruit`];
+      const extraVeggiesActive = !!state.completedAddons[`${day}-extra_veggies`];
+      const energySnackActive = !!state.completedAddons[`${day}-energy_snack`];
+
+      let addedCalories = 0;
+      if (extraFruitActive) addedCalories += 80;
+      if (extraVeggiesActive) addedCalories += 40;
+      if (energySnackActive) addedCalories += 150;
+
+      // --- CÁLCULO DE ENTRENAMIENTO SELECCIONADO Y VOLUMEN MANUAL ---
+      const selectedWorkout = state.workoutToday[day] || 'ninguno';
+      const manualVolume = state.workoutVolume[day] || 0;
+      
+      const workoutDetails = getDynamicWorkoutDetails(selectedWorkout, manualVolume);
+      
+      // Si completó la recuperación de este entrenamiento específico
+      const recoveryActive = !!state.completedRecovery[day] && selectedWorkout !== 'ninguno';
+      const recoveryCalories = recoveryActive ? workoutDetails.caloriasCombo : 0;
+
+      // Total de calorías ingeridas hoy (Base + Agregados + Combo Recuperación)
+      const totalTodayCalories = baseCalories + addedCalories + recoveryCalories;
+
+      // Requerimiento de mantenimiento para José Manuel (30 años, 174 lbs, Natación/Caminata/Rutina activa)
+      // Base de mantenimiento diario: ~2,400 kcal. Con entreno pesado aumenta de forma dinámica según el gasto del volumen real.
+      const dynamicMaintenance = 2400 + workoutDetails.gasto;
+      
+      // Rango de déficit saludable recomendado para perder peso de forma segura (meta 500 a 700 kcal abajo del mantenimiento dinámico)
+      const recommendedLower = Math.round(dynamicMaintenance - 750);
+      const recommendedUpper = Math.round(dynamicMaintenance - 500);
+
+      // Calcular porcentaje respecto a la meta saludable media
+      const targetMiddle = Math.round((recommendedLower + recommendedUpper) / 2);
+      const currentPercent = Math.min(100, Math.round((totalTodayCalories / targetMiddle) * 100));
+
+      // Determinación del estado calórico y su color visual
+      let statusText = "";
+      let statusColor = "";
+      if (totalTodayCalories < recommendedLower) {
+        statusText = "Déficit Extremo ⚠️ (Riesgo alto de fatiga, mareos y catabolismo muscular). ¡Aumenta tu volumen ingresado o consume el combo sugerido!";
+        statusColor = "text-amber-700 bg-amber-50 border-amber-200";
+      } else if (totalTodayCalories <= recommendedUpper) {
+        statusText = "Zona Metabólica Segura ✨ (Déficit óptimo para perder peso manteniendo energía e integridad muscular).";
+        statusColor = "text-emerald-700 bg-emerald-50 border-emerald-200";
+      } else {
+        statusText = "Déficit Ligero 👍 (Excelente rendimiento, ideal para entrenamientos de máxima demanda energética).";
+        statusColor = "text-blue-600 bg-blue-50 border-blue-200";
+      }
+
+      container.innerHTML = `
+        <div class="space-y-6">
+          
+          <!-- SECCIÓN REESTRUCTURADA: REGISTRO DE ENTRENAMIENTO DIARIO -->
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div class="flex items-center gap-2">
+                <span class="text-2xl">🏋️‍♂️</span>
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-base">¿Qué entrenaste hoy?</h4>
+                  <p class="text-xs text-slate-500 font-medium">Selecciona tu sesión muscular de hoy e introduce el volumen de carga manual.</p>
+                </div>
+              </div>
+              <span class="text-[10px] font-bold uppercase tracking-wide bg-teal-50 border border-teal-200 text-teal-800 px-3 py-1 rounded-full shrink-0">Monitoreo de Salud</span>
+            </div>
+
+            <!-- Botones de Rutinas con Iconos Acordes Corregidos -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <button onclick="selectWorkout('pecho')" class="py-2.5 px-2 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-1.5 ${
+                selectedWorkout === 'pecho' ? 'bg-teal-600 border-teal-600 text-white scale-105 shadow-md' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }">
+                <span class="text-xl">🛡️</span>
+                <span>Pecho</span>
+              </button>
+              <button onclick="selectWorkout('espalda')" class="py-2.5 px-2 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-1.5 ${
+                selectedWorkout === 'espalda' ? 'bg-teal-600 border-teal-600 text-white scale-105 shadow-md' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }">
+                <span class="text-xl">👐</span>
+                <span>Espalda</span>
+              </button>
+              <button onclick="selectWorkout('hombro')" class="py-2.5 px-2 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-1.5 ${
+                selectedWorkout === 'hombro' ? 'bg-teal-600 border-teal-600 text-white scale-105 shadow-md' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }">
+                <span class="text-xl">🔺</span>
+                <span>Hombros</span>
+              </button>
+              <button onclick="selectWorkout('brazos')" class="py-2.5 px-2 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-1.5 ${
+                selectedWorkout === 'brazos' ? 'bg-teal-600 border-teal-600 text-white scale-105 shadow-md' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }">
+                <span class="text-xl">💪</span>
+                <span>Brazos</span>
+              </button>
+              <button onclick="selectWorkout('abdomen')" class="py-2.5 px-2 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-1.5 ${
+                selectedWorkout === 'abdomen' ? 'bg-teal-600 border-teal-600 text-white scale-105 shadow-md' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }">
+                <span class="text-xl">🧱</span>
+                <span>Abdomen</span>
+              </button>
+              <button onclick="selectWorkout('ninguno')" class="py-2.5 px-2 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-1.5 ${
+                selectedWorkout === 'ninguno' ? 'bg-slate-400 border-slate-400 text-white scale-105 shadow-md' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }">
+                <span class="text-xl">💤</span>
+                <span>Descanso</span>
+              </button>
+            </div>
+
+            <!-- INGRESO MANUAL DE VOLUMEN (SOLO SI SELECCIONÓ ENTRENAMIENTO) -->
+            ${selectedWorkout !== 'ninguno' ? `
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                  <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-600">
+                    ¿Cuál fue tu volumen de carga total en lbs para hoy?
+                  </label>
+                  <span class="text-[10px] text-slate-400 font-bold italic">Suma: (Series × Reps × Peso)</span>
+                </div>
+                
+                <div class="flex gap-2 max-w-xs">
+                  <div class="relative flex-1">
+                    <input type="number" id="input-workout-volume" 
+                           oninput="changeWorkoutVolume(this.value)" 
+                           class="w-full bg-white border border-slate-300 rounded-lg py-2 pl-3 pr-12 text-slate-800 font-extrabold focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm" 
+                           placeholder="Ej. 8640" 
+                           value="${manualVolume || ''}">
+                    <span class="absolute right-3 top-2 text-slate-400 text-xs font-bold">lbs</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- DETALLE DINÁMICO DEL COMBO DE SEGURIDAD NUTRICIONAL SEGÚN TU VOLUMEN REAL -->
+              <div class="mt-4 p-4 rounded-xl border border-teal-200 bg-teal-50/20 space-y-3">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">🥛</span>
+                    <h5 class="font-extrabold text-sm text-teal-900">Combo de Recuperación Basado en Volumen Real</h5>
+                  </div>
+                  <span class="text-[10px] font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full">Evitar Fatiga y Catabolismo</span>
+                </div>
+                
+                <div class="bg-white p-3.5 rounded-lg border border-teal-100 space-y-1 text-xs">
+                  <div class="font-extrabold text-slate-700">Porción de seguridad sugerida para hoy:</div>
+                  <p id="text-workout-sugerencia" class="font-bold text-teal-800 text-sm">${workoutDetails.sugerencia}</p>
+                  <p id="text-workout-explicacion" class="text-[11px] text-slate-500 leading-relaxed mt-2 font-medium">${workoutDetails.explicacion}</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-1">
+                  <div class="text-xs text-slate-600 font-bold">
+                    Aporte Extra de Seguridad: <span id="text-workout-combo-calorias" class="text-teal-700 font-black">+${workoutDetails.caloriasCombo} kcal</span> • Gasto Estimado: <span id="text-workout-gasto" class="text-rose-600">-${workoutDetails.gasto} kcal</span>
+                  </div>
+                  
+                  <button onclick="toggleRecoveryComplete()" class="w-full sm:w-auto px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center justify-center gap-2 ${
+                    recoveryActive 
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                      : 'bg-white hover:bg-slate-50 border border-teal-300 text-teal-700'
+                  }">
+                    <div class="w-4 h-4 rounded border flex items-center justify-center ${recoveryActive ? 'bg-white border-white text-emerald-600' : 'border-teal-400 bg-white'}">
+                      ${recoveryActive ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                    </div>
+                    <span>${recoveryActive ? '✓ Combo Consumido' : 'Marcar como Consumido'}</span>
+                  </button>
+                </div>
+              </div>
+            ` : ''}
+
+          </div>
+
+          <!-- ANALISIS ENERGETICO TOTAL -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6">
+            <div class="flex items-center gap-2.5">
+              <span class="text-2xl">⚡</span>
+              <div>
+                <h3 class="font-extrabold text-slate-800 text-lg">Análisis de Requerimiento Calórico</h3>
+                <p class="text-xs text-slate-500 font-medium">Metabolismo y balance adaptado a tu entrenamiento y volumen de hoy.</p>
+              </div>
+            </div>
+
+            <!-- Bloque Comparativo -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Menú Base DoctorSV + Extras</span>
+                  <span id="text-base-plus-addons" class="text-2xl font-black text-slate-700 mt-1">~${baseCalories + addedCalories} kcal</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2 font-medium leading-relaxed">
+                  Aporte estimado de tu dieta limpia (${baseCalories} kcal) más tus agregados de libre consumo marcados.
+                </p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-teal-50/50 border border-teal-100 flex flex-col justify-between">
+                <div>
+                  <span class="text-[10px] font-bold text-teal-600 uppercase tracking-wider block">Tu Objetivo Recomendado (Hoy)</span>
+                  <span id="text-mantenimiento-dinamico" class="text-2xl font-black text-teal-700 mt-1">${recommendedLower} - ${recommendedUpper} kcal</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-2 font-medium leading-relaxed">
+                  Calculado dinámicamente según el desgaste de las libras totales que ingresaste en tu entrenamiento.
+                </p>
+              </div>
+            </div>
+
+            <!-- Medidor Dinámico de Energía -->
+            <div class="space-y-2">
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-600">Total Hoy Estimado: <strong id="text-total-hoy-calorias" class="text-teal-700">${totalTodayCalories} kcal</strong></span>
+                <span id="text-progress-percent" class="font-bold text-slate-400">${currentPercent}% del objetivo promedio</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden relative">
+                <!-- Zona recomendada marcada visualmente de fondo -->
+                <div class="absolute left-[68%] right-[10%] top-0 bottom-0 bg-emerald-500/10 border-l border-r border-dashed border-emerald-500/30"></div>
+                <div id="progressbar-calorias" class="bg-gradient-to-r from-amber-400 via-teal-500 to-emerald-600 h-3 rounded-full transition-all duration-500" style="width: ${currentPercent}%"></div>
+              </div>
+              <div class="flex justify-between text-[10px] text-slate-400 font-bold px-1">
+                <span>0 kcal</span>
+                <span>${baseCalories} kcal (Menú base)</span>
+                <span>${targetMiddle} kcal (Meta Óptima)</span>
+              </div>
+            </div>
+
+            <!-- Estado Dinámico -->
+            <div id="status-calorico-box" class="p-3.5 rounded-xl border text-xs font-bold ${statusColor} flex items-center gap-2">
+              <span>📢</span>
+              <span>Estado Calórico Actual: ${statusText}</span>
+            </div>
+
+            <!-- AGREGADOS SUGERIDOS -->
+            <div class="border-t pt-5 space-y-4">
+              <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
+                    <span>➕</span> Agregados de Libre Consumo
+                  </h4>
+                  <p class="text-xs text-slate-500 font-medium">Puedes añadir estos alimentos si tienes hambre de más volumen sin ensuciar la dieta.</p>
+                </div>
+                <span class="text-[10px] uppercase font-bold bg-slate-100 text-slate-600 py-1 px-2.5 rounded-full shrink-0">No altera la dieta limpia</span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                
+                <!-- Fruta Extra -->
+                <div onclick="toggleAddon('extra_fruit')" class="p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                  extraFruitActive ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-100' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200'
+                }">
+                  <div class="flex items-start justify-between">
+                    <span class="text-xl">🍏</span>
+                    <div class="w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                      extraFruitActive ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
+                    }">
+                      ${extraFruitActive ? '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                    </div>
+                  </div>
+                  <div class="mt-3">
+                    <h5 class="font-bold text-xs text-slate-800">Porción de Fruta Extra</h5>
+                    <p class="text-[11px] text-slate-500 mt-1">1 taza de papaya, sandía picada o 1 manzana verde.</p>
+                    <span class="inline-block mt-2 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">+80 kcal</span>
+                  </div>
+                </div>
+
+                <!-- Vegetales Libres -->
+                <div onclick="toggleAddon('extra_veggies')" class="p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                  extraVeggiesActive ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-100' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200'
+                }">
+                  <div class="flex items-start justify-between">
+                    <span class="text-xl">🥒</span>
+                    <div class="w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                      extraVeggiesActive ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
+                    }">
+                      ${extraVeggiesActive ? '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                    </div>
+                  </div>
+                  <div class="mt-3">
+                    <h5 class="font-bold text-xs text-slate-800">Vegetales de Libre Consumo</h5>
+                    <p class="text-[11px] text-slate-500 mt-1">Pepino rallado o zanahoria con limón y sal mineral.</p>
+                    <span class="inline-block mt-2 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">+40 kcal</span>
+                  </div>
+                </div>
+
+                <!-- Snack Energético -->
+                <div onclick="toggleAddon('energy_snack')" class="p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                  energySnackActive ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-100' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200'
+                }">
+                  <div class="flex items-start justify-between">
+                    <span class="text-xl">🥜</span>
+                    <div class="w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                      energySnackActive ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
+                    }">
+                      ${energySnackActive ? '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                    </div>
+                  </div>
+                  <div class="mt-3">
+                    <h5 class="font-bold text-xs text-slate-800">Snack de Rendimiento</h5>
+                    <p class="text-[11px] text-slate-500 mt-1">1 barra de avena integral o 12 almendras adicionales.</p>
+                    <span class="inline-block mt-2 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">+150 kcal</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // === NUEVA FUNCIÓN REACTIVA: ACTUALIZA EL CONTENIDO DINÁMICO SIN DESTRUIR EL INPUT ===
+    function updateCalorieCalculationsOnly() {
+      const day = state.selectedDay;
+      const vol = state.workoutVolume[day] || 0;
+      const selectedWorkout = state.workoutToday[day] || 'ninguno';
+      const workoutDetails = getDynamicWorkoutDetails(selectedWorkout, vol);
+
+      const baseCalories = 1350;
+      const extraFruitActive = !!state.completedAddons[`${day}-extra_fruit`];
+      const extraVeggiesActive = !!state.completedAddons[`${day}-extra_veggies`];
+      const energySnackActive = !!state.completedAddons[`${day}-energy_snack`];
+
+      let addedCalories = 0;
+      if (extraFruitActive) addedCalories += 80;
+      if (extraVeggiesActive) addedCalories += 40;
+      if (energySnackActive) addedCalories += 150;
+
+      const recoveryActive = !!state.completedRecovery[day] && selectedWorkout !== 'ninguno';
+      const recoveryCalories = recoveryActive ? workoutDetails.caloriasCombo : 0;
+      const totalTodayCalories = baseCalories + addedCalories + recoveryCalories;
+
+      const dynamicMaintenance = 2400 + workoutDetails.gasto;
+      const recommendedLower = Math.round(dynamicMaintenance - 750);
+      const recommendedUpper = Math.round(dynamicMaintenance - 500);
+
+      const targetMiddle = Math.round((recommendedLower + recommendedUpper) / 2);
+      const currentPercent = Math.min(100, Math.round((totalTodayCalories / targetMiddle) * 100));
+
+      let statusText = "";
+      let statusClass = "";
+      if (totalTodayCalories < recommendedLower) {
+        statusText = "Déficit Extremo ⚠️ (Riesgo alto de fatiga, mareos y catabolismo muscular). ¡Aumenta tu volumen ingresado o consume el combo sugerido!";
+        statusClass = "p-3.5 rounded-xl border text-xs font-bold text-amber-700 bg-amber-50 border-amber-200 flex items-center gap-2";
+      } else if (totalTodayCalories <= recommendedUpper) {
+        statusText = "Zona Metabólica Segura ✨ (Déficit óptimo para perder peso manteniendo energía e integridad muscular).";
+        statusClass = "p-3.5 rounded-xl border text-xs font-bold text-emerald-700 bg-emerald-50 border-emerald-200 flex items-center gap-2";
+      } else {
+        statusText = "Déficit Ligero 👍 (Excelente rendimiento, ideal para entrenamientos de máxima demanda energética).";
+        statusClass = "p-3.5 rounded-xl border text-xs font-bold text-blue-600 bg-blue-50 border-blue-200 flex items-center gap-2";
+      }
+
+      // Actualizar nodos específicos
+      const elWorkoutGasto = document.getElementById('text-workout-gasto');
+      const elWorkoutComboCalorias = document.getElementById('text-workout-combo-calorias');
+      const elWorkoutSugerencia = document.getElementById('text-workout-sugerencia');
+      const elWorkoutExplicacion = document.getElementById('text-workout-explicacion');
+      const elTotalHoyCalorias = document.getElementById('text-total-hoy-calorias');
+      const elMantenimientoDinamico = document.getElementById('text-mantenimiento-dinamico');
+      const elProgressPercent = document.getElementById('text-progress-percent');
+      const elProgressbarCalorias = document.getElementById('progressbar-calorias');
+      const elStatusCaloricoBox = document.getElementById('status-calorico-box');
+      const elBasePlusAddons = document.getElementById('text-base-plus-addons');
+
+      if (elWorkoutGasto) elWorkoutGasto.innerText = `-${workoutDetails.gasto} kcal`;
+      if (elWorkoutComboCalorias) elWorkoutComboCalorias.innerText = `+${workoutDetails.caloriasCombo} kcal`;
+      if (elWorkoutSugerencia) elWorkoutSugerencia.innerText = workoutDetails.sugerencia;
+      if (elWorkoutExplicacion) elWorkoutExplicacion.innerText = workoutDetails.explicacion;
+      if (elTotalHoyCalorias) elTotalHoyCalorias.innerText = `${totalTodayCalories} kcal`;
+      if (elMantenimientoDinamico) elMantenimientoDinamico.innerText = `${recommendedLower} - ${recommendedUpper} kcal`;
+      if (elProgressPercent) elProgressPercent.innerText = `${currentPercent}% del objetivo promedio`;
+      
+      if (elProgressbarCalorias) {
+        elProgressbarCalorias.style.width = `${currentPercent}%`;
+      }
+      
+      if (elStatusCaloricoBox) {
+        elStatusCaloricoBox.className = statusClass;
+        elStatusCaloricoBox.innerHTML = `<span>📢</span> <span>Estado Calórico Actual: ${statusText}</span>`;
+      }
+
+      if (elBasePlusAddons) {
+        elBasePlusAddons.innerText = `~${baseCalories + addedCalories} kcal`;
+      }
+    }
+
+    // Cambiar de entrenamiento seleccionado
+    function selectWorkout(workoutId) {
+      const day = state.selectedDay;
+      state.workoutToday[day] = workoutId;
+      state.completedRecovery[day] = false;
+      saveToLocalStorage();
+      renderAll();
+      
+      const config = {
+        pecho: 'Pecho 🛡️',
+        espalda: 'Espalda 👐',
+        hombro: 'Hombros 🔺',
+        brazos: 'Brazos 💪',
+        abdomen: 'Abdomen 🧱',
+        ninguno: 'Descanso 💤'
+      };
+      
+      const wName = config[workoutId] || 'Ninguno';
+      showToast(`Entrenamiento de ${wName} seleccionado para hoy.`, 'success');
+    }
+
+    // Cambiar dinámicamente el volumen de carga ingresado manualmente
+    function changeWorkoutVolume(value) {
+      const day = state.selectedDay;
+      const vol = parseFloat(value) || 0;
+      state.workoutVolume[day] = vol;
+      saveToLocalStorage();
+      
+      // Actualizamos los cálculos dinámicamente en lugar de redibujar todo
+      updateCalorieCalculationsOnly();
+      evaluarLogrosAutomaticos();
+    }
+
+    // Toggle de consumo de recuperación del entrenamiento
+    function toggleRecoveryComplete() {
+      const day = state.selectedDay;
+      state.completedRecovery[day] = !state.completedRecovery[day];
+      saveToLocalStorage();
+      renderAll();
+
+      const workoutId = state.workoutToday[day] || 'ninguno';
+      const vol = state.workoutVolume[day] || 0;
+      const detail = getDynamicWorkoutDetails(workoutId, vol);
+      if (state.completedRecovery[day]) {
+        showToast(`¡Excelente! Combo de recuperación consumido (+${detail.caloriasCombo} kcal). 🥛`, 'success');
+      } else {
+        showToast('Combo de recuperación desmarcado.', 'info');
+      }
+    }
+
+    function toggleAddon(addonId) {
+      const day = state.selectedDay;
+      const key = `${day}-${addonId}`;
+      state.completedAddons[key] = !state.completedAddons[key];
+      saveToLocalStorage();
+      renderAll();
+      showToast('Calorías diarias y agregados actualizados localmente.', 'info');
+    }
+
+    // Cambiar día de selección hoy
+    function changeDay(newDay) {
+      state.selectedDay = newDay;
+      renderHoyTab();
+    }
+
+    // Toggle completado
+    function toggleMealComplete(day, mealKey) {
+      const key = `${day}-${mealKey}`;
+      state.completedMeals[key] = !state.completedMeals[key];
+      saveToLocalStorage();
+      renderAll();
+      showToast(`Comida del ${day} modificada localmente.`, 'info');
+    }
+
+    // Control de Agua
+    function addWater(val) {
+      state.waterGlasses = Math.max(0, Math.min(12, state.waterGlasses + val));
+      saveToLocalStorage();
+      renderAll();
+    }
+    function setWaterDirectly(val) {
+      if (state.waterGlasses === val) {
+        state.waterGlasses = val - 1; 
+      } else {
+        state.waterGlasses = val;
+      }
+      saveToLocalStorage();
+      renderAll();
+    }
+
+    // Vista 2: Menú Completo
+    function renderMenuTab() {
+      const container = document.getElementById('full-weekly-menu-container');
+      container.innerHTML = '';
+
+      Object.entries(menuSemanal).forEach(([day, meals]) => {
+        const mealTypes = [
+          { key: 'desayuno', label: 'Desayuno', bg: 'bg-amber-50 text-amber-900 border-amber-100' },
+          { key: 'refrigerio1', label: 'Ref. Mañana', bg: 'bg-emerald-50 text-emerald-900 border-emerald-100' },
+          { key: 'almuerzo', label: 'Almuerzo', bg: 'bg-cyan-50 text-cyan-900 border-cyan-100' },
+          { key: 'refrigerio2', label: 'Ref. Tarde', bg: 'bg-indigo-50 text-indigo-900 border-indigo-100' },
+          { key: 'cena', label: 'Cena', bg: 'bg-purple-50 text-purple-900 border-purple-100' }
+        ];
+
+        const cardsHtml = mealTypes.map(mType => {
+          const itemData = meals[mType.key];
+          const lis = itemData.items.map(it => `<li class="leading-tight">${it}</li>`).join('');
+          return `
+            <div class="p-4 rounded-xl border ${mType.bg} flex flex-col justify-between">
+              <div>
+                <div class="font-extrabold text-xs uppercase tracking-wider mb-2 opacity-80">${mType.label}</div>
+                <ul class="text-xs space-y-1.5 list-disc pl-3 font-semibold">
+                  ${lis}
+                </ul>
+              </div>
+              <div class="text-[10px] italic mt-3 opacity-75 border-t pt-1.5 border-current/20 leading-tight font-medium">
+                ${itemData.notes}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        const dayHtml = `
+          <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hover:border-teal-200 transition-all">
+            <div class="bg-teal-50 px-6 py-4 flex justify-between items-center border-b border-slate-100">
+              <h3 class="text-lg font-bold text-teal-800 flex items-center gap-2">
+                <span>📌</span> ${day}
+              </h3>
+              <button onclick="changeDayAndGo('${day}')" class="text-xs font-bold text-teal-600 hover:text-teal-800 hover:underline">
+                Registrar porciones de este día ➔
+              </button>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              ${cardsHtml}
+            </div>
+          </div>
+        `;
+        container.insertAdjacentHTML('beforeend', dayHtml);
+      });
+    }
+
+    function changeDayAndGo(day) {
+      state.selectedDay = day;
+      document.getElementById('select-dia').value = day;
+      switchTab('hoy');
+      renderHoyTab();
+    }
+
+    // Vista 3: Súper Semanal
+    function renderComprasTab() {
+      const container = document.getElementById('shopping-categories-container');
+      container.innerHTML = '';
+
+      sugerenciaCompras.forEach((cat) => {
+        const itemsHtml = cat.items.map(it => {
+          const key = `${cat.categoria}-${it.nombre}`;
+          const checked = !!state.shoppingCart[key];
+          return `
+            <div onclick="toggleCartItem('${cat.categoria}', '${it.nombre}')" class="py-3 flex items-start gap-3 cursor-pointer transition-colors hover:bg-slate-50/50 px-2 rounded-lg ${checked ? 'opacity-50' : ''}">
+              <div class="w-5 h-5 rounded border mt-0.5 flex items-center justify-center transition-all ${
+                checked ? 'bg-teal-600 border-teal-600 text-white' : 'border-slate-300 bg-white'
+              }">
+                ${checked ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+              </div>
+              <div class="flex-1">
+                <span class="font-semibold text-sm ${checked ? 'line-through text-slate-400' : 'text-slate-800'}">
+                  ${it.nombre}
+                </span>
+                <div class="text-xs text-slate-500 font-bold">Cantidad recomendada: ${it.cantidad}</div>
+                ${it.notes ? `<p class="text-[11px] text-teal-600 italic mt-0.5 font-medium">${it.notes}</p>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        const catHtml = `
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
+            <h3 class="font-bold text-slate-800 text-lg border-b pb-2 flex justify-between items-center">
+              <span>${cat.categoria}</span>
+              <span class="text-xs bg-teal-100 text-teal-800 py-1 px-2.5 rounded-full font-bold">
+                ${cat.items.length} ítems
+              </span>
+            </h3>
+            <div class="divide-y divide-slate-100">
+              ${itemsHtml}
+            </div>
+          </div>
+        `;
+        container.insertAdjacentHTML('beforeend', catHtml);
+      });
+    }
+
+    function toggleCartItem(cat, itemName) {
+      const key = `${cat}-${itemName}`;
+      state.shoppingCart[key] = !state.shoppingCart[key];
+      saveToLocalStorage();
+      renderAll();
+    }
+
+    function clearShoppingCart() {
+      state.shoppingCart = {};
+      saveToLocalStorage();
+      renderAll();
+      showToast('Lista de súper restablecida.', 'info');
+    }
+
+    // Vista 4: Control de Peso
+    function renderProgresoTab() {
+      const initialWeight = 174.0;
+      const currentWeight = state.weightLogs.length > 0 ? state.weightLogs[0].weight : initialWeight;
+      const lost = (initialWeight - currentWeight).toFixed(1);
+      const targetDiff = initialWeight - state.targetWeight;
+      const progressPercent = targetDiff > 0 ? Math.min(100, Math.max(0, ((initialWeight - currentWeight) / targetDiff) * 100)) : 0;
+
+      document.getElementById('stat-current-weight').innerText = `${currentWeight} lb`;
+      document.getElementById('stat-lost-weight').innerText = `${lost} lb`;
+      document.getElementById('stat-progress-bar').style.width = `${progressPercent}%`;
+
+      // Historial textual
+      const logsHistory = document.getElementById('weight-logs-history');
+      logsHistory.innerHTML = '';
+      state.weightLogs.forEach(log => {
+        const logHtml = `
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center gap-4 text-xs">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-800 text-sm">${log.weight} lbs</span>
+                <span class="bg-teal-50 text-teal-700 font-bold px-2 py-0.5 rounded-full">${log.date}</span>
+              </div>
+              <p class="text-slate-500 italic mt-1 font-medium">${log.notes}</p>
+            </div>
+            <button onclick="deleteWeightLog('${log.id}')" class="text-rose-500 hover:text-rose-700 font-bold text-sm">
+              Eliminar
+            </button>
+          </div>
+        `;
+        logsHistory.insertAdjacentHTML('beforeend', logHtml);
+      });
+
+      // Render gráfico SVG
+      const graphContainer = document.getElementById('weight-graph-container');
+      if (state.weightLogs.length > 1) {
+        const sortedLogs = [...state.weightLogs].reverse();
+        const weights = sortedLogs.map(l => l.weight);
+        const maxW = Math.max(...weights) + 1;
+        const minW = Math.min(...weights) - 1;
+        const range = maxW - minW || 1;
+
+        const points = sortedLogs.map((log, index) => {
+          const x = (index / (sortedLogs.length - 1)) * 360 + 20;
+          const y = 130 - ((log.weight - minW) / range) * 90;
+          return { x, y, log };
+        });
+
+        const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+        const pointsHtml = points.map(p => `
+          <circle cx="${p.x}" cy="${p.y}" r="5" class="fill-teal-600 stroke-white stroke-2"></circle>
+          <text x="${p.x}" y="${p.y - 12}" text-anchor="middle" class="text-[10px] font-bold fill-slate-700">${p.log.weight} lb</text>
+          <text x="${p.x}" y="145" text-anchor="middle" class="text-[9px] fill-slate-400 font-semibold">${p.log.date.substring(5)}</text>
+        `).join('');
+
+        graphContainer.innerHTML = `
+          <svg viewBox="0 0 400 150" class="w-full max-h-[160px] text-teal-600 overflow-visible">
+            <line x1="10" y1="30" x2="390" y2="30" stroke="#e2e8f0" stroke-dasharray="4 4" />
+            <line x1="10" y1="75" x2="390" y2="75" stroke="#e2e8f0" stroke-dasharray="4 4" />
+            <line x1="10" y1="120" x2="390" y2="120" stroke="#e2e8f0" stroke-dasharray="4 4" />
+            <path d="${pathD}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            ${pointsHtml}
+          </svg>
+        `;
+      } else {
+        graphContainer.innerHTML = `
+          <div class="p-8 text-center text-slate-400 text-sm font-medium">
+            Registra al menos 2 pesos diferentes para habilitar la visualización del gráfico de tendencia.
+          </div>
+        `;
+      }
+    }
+
+    function addWeightLog(e) {
+      e.preventDefault();
+      const weightIn = document.getElementById('weight-input');
+      const notesIn = document.getElementById('weight-notes-input');
+      
+      const val = parseFloat(weightIn.value);
+      if (isNaN(val)) return;
+
+      const log = {
+        id: Date.now().toString(),
+        date: new Date().toISOString().split('T')[0],
+        weight: val,
+        notes: notesIn.value || 'Sin anotaciones'
+      };
+
+      state.weightLogs.unshift(log);
+      weightIn.value = '';
+      notesIn.value = '';
+
+      saveToLocalStorage();
+      renderAll();
+      showToast(`¡Peso de ${val} lb registrado localmente! ⚖️`, 'success');
+    }
+
+    // Guardar cambios en LocalStorage
+    function deleteWeightLog(id) {
+      state.weightLogs = state.weightLogs.filter(l => l.id !== id);
+      saveToLocalStorage();
+      renderAll();
+      showToast('Registro de peso eliminado.', 'info');
+    }
+
+    function updateTargetWeight(val) {
+      const num = parseFloat(val);
+      if (!isNaN(num)) {
+        state.targetWeight = num;
+        saveToLocalStorage();
+        renderAll();
+        showToast(`Meta de peso actualizada a ${num} lb.`, 'success');
+      }
+    }
+
+    // Vista 5: Logros
+    function renderLogrosTab() {
+      const stats = getAchievementsMetrics();
+
+      // Render premios
+      const prizesGrid = document.getElementById('virtual-prizes-grid');
+      prizesGrid.innerHTML = '';
+      premiosVirtuales.forEach(p => {
+        const unlocked = stats.count >= p.req;
+        const card = `
+          <div class="p-4 rounded-xl border flex items-center gap-3 transition-all ${
+            unlocked ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400 opacity-70'
+          }">
+            <div class="text-2xl">${unlocked ? '🔓' : '🔒'}</div>
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Requisito: ${p.req} Logros</div>
+              <h4 class="font-bold text-sm text-slate-800">${p.prize}</h4>
+              <p class="text-xs text-slate-500">${p.desc}</p>
+            </div>
+          </div>
+        `;
+        prizesGrid.insertAdjacentHTML('beforeend', card);
+      });
+
+      // Render Lista de Logros
+      const listGrid = document.getElementById('achievements-list-grid');
+      listGrid.innerHTML = '';
+      listadoLogros.forEach(ach => {
+        const isUnlocked = !!state.unlockedAchievements[ach.id];
+        const categoryColor = 
+          ach.cat === 'Hidratación' ? 'bg-blue-100 text-blue-800' :
+          ach.cat === 'Alimentación' ? 'bg-amber-100 text-amber-800' :
+          ach.cat === 'Peso' ? 'bg-rose-100 text-rose-800' :
+          ach.cat === 'Compras' ? 'bg-cyan-100 text-cyan-800' : 'bg-purple-100 text-purple-800';
+
+        const card = `
+          <div onclick="toggleAchievement('${ach.id}', ${ach.manual})" class="p-4 rounded-2xl border-2 transition-all flex flex-col justify-between cursor-pointer ${
+            isUnlocked ? 'bg-emerald-50/70 border-emerald-400 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-200'
+          }">
+            <div class="space-y-2">
+              <div class="flex justify-between items-start">
+                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${categoryColor}">
+                  ${ach.cat}
+                </span>
+                <span class="font-bold text-xs ${isUnlocked ? 'text-emerald-600' : 'text-slate-400'}">
+                  ${ach.pts} PTS
+                </span>
+              </div>
+              <div>
+                <h4 class="font-bold text-sm ${isUnlocked ? 'text-emerald-950 line-through' : 'text-slate-800'}">
+                  ${ach.title}
+                </h4>
+                <p class="text-xs text-slate-500 mt-1 leading-relaxed">${ach.desc}</p>
+              </div>
+            </div>
+            <div class="mt-4 pt-2 border-t border-slate-100/60 flex justify-between items-center">
+              <span class="text-[10px] text-slate-400 font-bold">
+                ${ach.manual ? '⚡ Reclamable Manual' : '⚙️ Auto-calculado'}
+              </span>
+              <div class="w-5 h-5 rounded-full flex items-center justify-center ${
+                isUnlocked ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-300'
+              }">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+              </div>
+            </div>
+          </div>
+        `;
+        listGrid.insertAdjacentHTML('beforeend', card);
+      });
+    }
+
+    function toggleAchievement(id, isManual) {
+      if (!isManual) return; 
+      state.unlockedAchievements[id] = !state.unlockedAchievements[id];
+      saveToLocalStorage();
+      renderAll();
+      
+      const achName = listadoLogros.find(a => a.id === id)?.title || '';
+      if (state.unlockedAchievements[id]) {
+        showToast(`¡Logro Desbloqueado: ${achName}! 🏆`, 'success');
+      } else {
+        showToast(`Logro cancelado.`, 'info');
+      }
+    }
+
+    // Evaluar logros automáticos
+    function evaluarLogrosAutomaticos() {
+      let changed = false;
+
+      // Hidratación
+      if (state.waterGlasses >= 1 && !state.unlockedAchievements['h1']) { state.unlockedAchievements['h1'] = true; changed = true; }
+      if (state.waterGlasses >= 8 && !state.unlockedAchievements['h2']) { state.unlockedAchievements['h2'] = true; changed = true; }
+      if (state.waterGlasses >= 12 && !state.unlockedAchievements['h3']) { state.unlockedAchievements['h3'] = true; changed = true; }
+
+      // Alimentación
+      const totalMeals = Object.keys(state.completedMeals).filter(k => state.completedMeals[k]).length;
+      if (totalMeals >= 1 && !state.unlockedAchievements['a1']) { state.unlockedAchievements['a1'] = true; changed = true; }
+
+      // Peso
+      if (state.weightLogs.length >= 1 && !state.unlockedAchievements['p1']) { state.unlockedAchievements['p1'] = true; changed = true; }
+      if (state.weightLogs.length > 0) {
+        const latest = state.weightLogs[0].weight;
+        const initial = 174.0;
+        const loss = initial - latest;
+
+        if (loss >= 1.0 && !state.unlockedAchievements['p2']) { state.unlockedAchievements['p2'] = true; changed = true; }
+        if (latest < 172.0 && !state.unlockedAchievements['p3']) { state.unlockedAchievements['p3'] = true; changed = true; }
+        if (latest < 170.0 && !state.unlockedAchievements['p4']) { state.unlockedAchievements['p4'] = true; changed = true; }
+
+        const halfWay = initial - ((initial - state.targetWeight) / 2);
+        if (latest <= halfWay && !state.unlockedAchievements['p6']) { state.unlockedAchievements['p6'] = true; changed = true; }
+        if (latest <= state.targetWeight && !state.unlockedAchievements['p7']) { state.unlockedAchievements['p7'] = true; changed = true; }
+      }
+
+      // Compras y Volumen
+      const cartCount = Object.keys(state.shoppingCart).filter(k => state.shoppingCart[k]).length;
+      if (cartCount >= 1 && !state.unlockedAchievements['c1']) { state.unlockedAchievements['c1'] = true; changed = true; }
+      
+      const hasWorkoutVolume = Object.values(state.workoutVolume).some(v => v > 0);
+      if (hasWorkoutVolume && !state.unlockedAchievements['c6']) { state.unlockedAchievements['c6'] = true; changed = true; }
+
+      if (changed) {
+        saveToLocalStorage();
+        showToast('¡Logros automáticos recalculados y actualizados! 🏆', 'success');
+      }
+    }
+
+    function getAchievementsMetrics() {
+      let points = 0;
+      let count = 0;
+      listadoLogros.forEach(ach => {
+        if (state.unlockedAchievements[ach.id]) {
+          points += ach.pts;
+          count++;
+        }
+      });
+      return { points, count };
+    }
+
+    function getUserLevel(points) {
+      if (points >= 2000) return { title: 'Maestro Nutricional de Élite 👑', color: 'text-amber-600 bg-amber-50 border-amber-200' };
+      if (points >= 1200) return { title: 'Guerrero Nutricional Avanzado ⚔️', color: 'text-indigo-600 bg-indigo-50 border-indigo-200' };
+      if (points >= 500) return { title: 'Disciplinado del Bienestar 🎖️', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
+      return { title: 'Iniciante del Plan 🌱', color: 'text-slate-600 bg-slate-50 border-slate-200' };
+    }
+
+    // Vista 6: Medición Manual
+    function renderPorcionesTab() {
+      const container = document.getElementById('portions-info-cards');
+      container.innerHTML = '';
+
+      porcionesMano.forEach((p, idx) => {
+        const isSelected = state.selectedPortion === p.id;
+        const card = `
+          <div onclick="selectPortion('${p.id}')" id="portion-card-${p.id}" class="p-4 rounded-xl border-2 cursor-pointer transition-all ${
+            isSelected ? `${p.color} ring-4 ring-slate-100 scale-[1.01] shadow-md` : 'bg-white border-slate-100 hover:border-slate-200'
+          }">
+            <div class="flex items-start gap-3">
+              <div class="bg-slate-100 rounded-lg p-1.5 font-bold text-xs text-slate-700">Nº ${idx + 1}</div>
+              <div class="flex-1">
+                <div class="flex justify-between items-center flex-wrap gap-1">
+                  <h4 class="font-extrabold text-sm text-slate-800">${p.titulo}</h4>
+                  <span class="text-xs font-bold bg-slate-100 px-2.5 py-0.5 rounded-full text-slate-700">Equivale: ${p.medida}</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-1"><strong class="text-slate-700">Aplica para:</strong> ${p.alimentos}</p>
+                <p class="text-xs text-teal-700 italic mt-1 font-medium"><strong>Guía Práctica:</strong> ${p.recomendacion}</p>
+              </div>
+            </div>
+          </div>
+        `;
+        container.insertAdjacentHTML('beforeend', card);
+      });
+    }
+
+    function selectPortion(portionId) {
+      state.selectedPortion = portionId;
+      renderPorcionesTab();
+      const card = document.getElementById(`portion-card-${portionId}`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+  </script>
+</body>
+</html>
+
